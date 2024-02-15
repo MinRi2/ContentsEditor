@@ -6,6 +6,7 @@ sourceSets.main.java.srcDirs = ["src"]
 
 repositories{
     mavenCentral()
+    mavenLocal()
     maven{ url "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
     maven{ url 'https://www.jitpack.io' }
 }
@@ -18,22 +19,29 @@ java{
 ext{
     //the build number that this mod is made for
     mindustryVersion = 'v146'
+    minModCoreVersion = "local"
     jabelVersion = "93fde537c7"
     //windows sucks
     isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
     sdkRoot = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+
+    modDir = "${System.getenv("APPDATA")}\\Mindustry\\mods"
 }
 
 //java 8 backwards compatibility flag
 allprojects{
     tasks.withType(JavaCompile){
         options.compilerArgs.addAll(['--release', '8'])
+        options.encoding('UTF-8')
     }
 }
 
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+
+    compileOnly files("libs/ContentsTweaker-3.0.3.jar")
+    compileOnly "com.github.MinRi2.MinModCore:core:$minModCoreVersion"
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
@@ -95,6 +103,18 @@ task deploy(type: Jar){
         delete{
             delete "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
             delete "$buildDir/libs/${project.archivesBaseName}Android.jar"
+        }
+    }
+}
+
+task compileAndCopy{
+    dependsOn jar
+
+    doLast{
+        copy{
+            from "$buildDir/libs/"
+            into "$modDir/"
+            include "${project.archivesBaseName}Desktop.jar"
         }
     }
 }

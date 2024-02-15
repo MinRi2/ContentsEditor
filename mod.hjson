@@ -1,14 +1,14 @@
 #the mod name as displayed in-game
-displayName: "Java Mod Template"
+displayName: ContentsEditor
 
 #the internal name of your mod
-name: "example-java-mod"
+name: "contents-editor"
 
 #your name
-author: "You"
+author: "minri2"
 
 #the fully qualified main class of the mod
-main: "example.ExampleJavaMod"
+main: "MinRi2.ContentsEditor.Main"
 
 #the mod description as seen in the mod dialog
 description: "A Mindustry Java mod template."
@@ -21,3 +21,7 @@ minGameVersion: 145
 
 #this is a java mod
 java: true
+
+hidden: true
+
+dependencies: ["contentstweaker", "min-mod-core"]
