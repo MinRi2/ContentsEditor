@@ -50,13 +50,13 @@ public class NodeDisplay{
     }
 
     private static void displayDefault(){
-        table.add(nodeName).pad(4f);
+        table.add(nodeName).labelAlign(Align.left).pad(4f).grow();
     }
 
     private static void displayContent(UnlockableContent content){
         table.top();
         table.image(content.uiIcon).scaling(Scaling.fit).size(Vars.iconLarge).pad(4f);
-        table.add(content.localizedName).labelAlign(Align.left).wrap().pad(4f).grow();
+        table.add(content.localizedName).labelAlign(Align.left).pad(4f).grow();
     }
 
     private static void displayContentType(ContentType contentType){
@@ -68,7 +68,7 @@ public class NodeDisplay{
 
         UnlockableContent symbol = (UnlockableContent)seq.first();
         table.image(symbol.uiIcon).scaling(Scaling.fit).size(Vars.iconLarge).pad(4f);
-        table.add(contentType.name()).labelAlign(Align.left).wrap().pad(4f).grow();
+        table.add(contentType.name()).labelAlign(Align.left).pad(4f).grow();
     }
 
 }

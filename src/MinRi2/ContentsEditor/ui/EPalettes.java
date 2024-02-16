@@ -8,6 +8,9 @@ import arc.graphics.*;
  */
 public class EPalettes{
     public static final Color
-    purple = Color.valueOf("#663366"),
-    purpleLight = Color.valueOf("#CC99CC");
+    purpleAccent1 = Color.valueOf("#CC99CC"),
+    purpleAccent2 = Color.valueOf("#f39cbc"),
+    purpleAccent3 = Color.valueOf("#ffa6a4"),
+    purpleAccent4 = Color.valueOf("#ffb98c");
+
 }

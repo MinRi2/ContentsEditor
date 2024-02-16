@@ -3,10 +3,9 @@ package MinRi2.ContentsEditor.ui.editor;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ModCore.ui.*;
+import arc.graphics.*;
 import arc.scene.ui.layout.*;
-import arc.util.*;
 import cf.wayzer.contentsTweaker.*;
-import mindustry.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.ui.*;
@@ -34,7 +33,7 @@ public class RootNodeEditor extends NodeEditor{
         cont.add(card).pad(16f).padTop(8f).grow();
     }
 
-    private static class NodeCard extends Table{
+    private class NodeCard extends Table{
         public final NodeData nodeData;
         protected final Table nodesTable;
         public boolean isChild;
@@ -99,8 +98,18 @@ public class RootNodeEditor extends NodeEditor{
                 for(NodeData child : nodeData){
                     pane.button(b -> {
                         NodeDisplay.display(b, child);
-                    }, Styles.cleari, () -> {
 
+                        b.button(Icon.trashSmall, Styles.cleari, () -> {
+                            child.remove();
+                            rebuildNodesTable();
+                        }).width(32f).growY();
+
+                        b.image().width(4f).color(Color.gray).growY();
+                        b.row();
+                        b.image().colspan(b.getColumns()).height(4f).color(Color.gray).growX();
+                    }, EStyles.cardButtoni, () -> {
+                        // Make NodeCard static?
+                        editChildNode(child);
                     }).growY();
 
                     if(++index % 2 == 0){
@@ -113,23 +122,34 @@ public class RootNodeEditor extends NodeEditor{
         private void buildTitle(Table table){
             CTNode node = nodeData.node;
 
-            table.table(MinTex.getColoredRegion(Pal.lightishGray), nodeTitle -> {
-                String name = nodeData.getDisplayName();
-                nodeTitle.add(name).labelAlign(Align.left).pad(8f).growX();
+            Color titleColor = !isChild ? EPalettes.purpleAccent2 : EPalettes.purpleAccent3;
+            table.table(MinTex.getColoredRegion(titleColor), nodeTitle -> {
+                nodeTitle.table(MinTex.getColoredRegion(Pal.darkestGray), nameTable -> {
+                    nameTable.image().colspan(3).height(4f).color(Color.gray).growX();
+                    nameTable.row();
+                    nameTable.image().width(4f).color(Color.gray).growY();
+
+                    NodeDisplay.display(nameTable, nodeData);
+                }).pad(8f).expandX().left();
 
                 nodeTitle.table(Styles.black3, buttonTable -> {
-                    buttonTable.defaults().size(Vars.iconXLarge);
+                    buttonTable.defaults().size(64f);
+
+                    buttonTable.button(Icon.refresh, Styles.clearNonei, () -> {
+                        nodeData.clearChildren();
+                        rebuildNodesTable();
+                    });
 
                     if(!nodeData.isRoot()){
-                        buttonTable.button(Icon.trash, Styles.cleari, () -> {
+                        buttonTable.button(Icon.trash, Styles.clearNonei, () -> {
                             nodeData.remove();
                             parent.rebuildNodesTable();
                         });
                     }
 
-                    buttonTable.button(Icon.add, Styles.cleari, () -> {
+                    buttonTable.button(Icon.add, Styles.clearNonei, () -> {
                         EUI.selector.select(node,
-                        (otherNodeName, otherNode) -> !nodeData.has(otherNodeName),
+                        (otherNodeName, otherNode) -> !nodeData.contains(otherNodeName),
                         (otherNodeName, otherNode) -> {
                             nodeData.getOrCreate(otherNodeName);
                             rebuildNodesTable();

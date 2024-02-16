@@ -72,8 +72,17 @@ public class NodeData implements Iterable<NodeData>{
         children.remove(childName);
     }
 
-    public boolean has(String childName){
-        return jsonData.has(childName);
+    public void clearChildren(){
+        Iterator<String> iterator = children.keys();
+        while(iterator.hasNext()){
+            String childName = iterator.next();
+            jsonData.remove(childName);
+            iterator.remove();
+        }
+    }
+
+    public boolean contains(String childName){
+        return children.containsKey(childName);
     }
 
     public void setParent(NodeData parentData){

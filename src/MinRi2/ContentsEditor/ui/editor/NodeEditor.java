@@ -11,6 +11,7 @@ import mindustry.ui.dialogs.*;
  */
 public class NodeEditor extends BaseDialog{
     protected NodeData nodeData;
+    private NodeEditor nodeEditor;
 
     public NodeEditor(){
         super("");
@@ -23,7 +24,7 @@ public class NodeEditor extends BaseDialog{
 
     protected void setup(){
         titleTable.clearChildren();
-        ElementUtils.addTitle(titleTable, "@contents-editor", EPalettes.purpleLight);
+        ElementUtils.addTitle(titleTable, "@contents-editor", EPalettes.purpleAccent1);
 
         cont.top();
 
@@ -32,11 +33,20 @@ public class NodeEditor extends BaseDialog{
     }
 
     protected void rebuild(){
+
     }
 
     public void show(NodeData nodeData){
         this.nodeData = nodeData;
 
         show();
+    }
+
+    protected void editChildNode(NodeData childNode){
+        if(nodeEditor == null){
+            nodeEditor = new NodeEditor();
+        }
+
+        nodeEditor.show(childNode);
     }
 }
