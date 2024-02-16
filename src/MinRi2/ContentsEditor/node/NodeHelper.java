@@ -1,7 +1,6 @@
 package MinRi2.ContentsEditor.node;
 
 import arc.struct.*;
-import arc.util.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
 
@@ -30,23 +29,6 @@ public class NodeHelper{
         }
 
         return null;
-    }
-
-    public static boolean settable(CTNode node){
-        node.collectAll();
-
-        if(!node.getChildren().containsKey("=")){
-            return false;
-        }
-
-        ObjInfo<?> objInfo = getObjectInfo(node);
-
-        if(objInfo == null){
-            return false;
-        }
-
-        Class<?> type = objInfo.getType();
-        return type.isPrimitive() || Reflect.isWrapper(type); // Simple type.
     }
 
     public static void getEntries(CTNode node, Seq<Entry<String, CTNode>> out){

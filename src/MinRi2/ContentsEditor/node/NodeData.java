@@ -6,40 +6,52 @@ import arc.util.serialization.JsonValue.*;
 import arc.util.serialization.JsonWriter.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
-import mindustry.ctype.*;
 import org.jetbrains.annotations.*;
-
-import java.util.*;
 
 /**
  * @author minri2
  * Create by 2024/2/15
  */
-public class NodeData implements Iterable<NodeData>{
+public class NodeData{
     private static NodeData rootData;
 
     public final CTNode node;
     public final String nodeName;
+    /** Init when {@link #setData(String, String)} */
     public JsonValue jsonData;
 
     protected ObjectMap<String, NodeData> children = new ObjectMap<>();
 
-    // Only for removing. Null when node is rootNode.
+    /** Only for removing. Null when {@link #node} is Root */
     @Nullable
     protected NodeData parentData;
-    protected ObjInfo<?> objInfo;
 
-    private NodeData(String nodeName, CTNode node, JsonValue jsonData){
+    private NodeData(String nodeName, CTNode node){
         this.nodeName = nodeName;
         this.node = node;
-        this.jsonData = jsonData;
     }
 
     public static NodeData getRootData(){
         if(rootData == null){
-            rootData = new NodeData("Root", NodeHelper.root, new JsonValue(ValueType.object));
+            rootData = new NodeData("Root", NodeHelper.root);
+            rootData.jsonData = new JsonValue(ValueType.object);
         }
         return rootData;
+    }
+
+    public void initJsonData(){
+        if(jsonData != null){
+            return;
+        }
+
+        if(parentData != null){
+            parentData.initJsonData();
+        }
+
+        JsonValue jsonData = new JsonValue(ValueType.object);
+        jsonData.addChild(nodeName, jsonData);
+
+        this.jsonData = jsonData;
     }
 
     public NodeData getOrCreate(String childName){
@@ -51,77 +63,48 @@ public class NodeData implements Iterable<NodeData>{
         }
 
         return children.get(childName, () -> {
-            JsonValue childJsonData = new JsonValue(ValueType.object);
-            jsonData.addChild(childName, childJsonData);
-
-            NodeData nodeData = new NodeData(childName, child, childJsonData);
+            NodeData nodeData = new NodeData(childName, child);
             nodeData.setParent(this);
 
             return nodeData;
         });
     }
 
-    public void remove(){
-        if(parentData != null){
-            parentData.remove(nodeName);
-        }
-    }
-
-    public void remove(String childName){
-        jsonData.remove(childName);
-        children.remove(childName);
-    }
-
-    public void clearChildren(){
-        Iterator<String> iterator = children.keys();
-        while(iterator.hasNext()){
-            String childName = iterator.next();
-            jsonData.remove(childName);
-            iterator.remove();
-        }
-    }
-
-    public boolean contains(String childName){
-        return children.containsKey(childName);
-    }
-
     public void setParent(NodeData parentData){
         this.parentData = parentData;
     }
 
-    public ObjInfo<?> getObjInfo(){
-        if(objInfo == null){
-            objInfo = NodeHelper.getObjectInfo(node);
+    public void setData(String name, String value){
+        initJsonData();
+
+        JsonValue data = jsonData.get(name);
+        if(data == null){
+            data = new JsonValue(ValueType.stringValue);
+            jsonData.addChild(name, data);
         }
-        return objInfo;
+
+        data.set(value);
     }
 
-    public String getDisplayName(){
-        ObjInfo<?> objInfo = getObjInfo();
+    public void removeData(String name){
+        jsonData.remove(name);
 
-        if(objInfo != null){
-            Object obj = objInfo.getObj();
-
-            if(obj instanceof UnlockableContent content){
-                return content.localizedName;
-            }
-
-            if(obj instanceof ContentType contentType){
-                return contentType.name();
-            }
+        // This jsonData is empty after removing. Remove jsonData from parent.
+        if(jsonData.child == null && parentData != null){
+            parentData.removeData(nodeName);
         }
+    }
 
-        return nodeName;
+    public boolean hasData(String name){
+        return jsonData.has(name);
+    }
+
+    public ObjInfo<?> getObjInfo(){
+        return NodeHelper.getObjectInfo(node);
     }
 
     public boolean isRoot(){
         return this == rootData;
-    }
-
-    @NotNull
-    @Override
-    public Iterator<NodeData> iterator(){
-        return children.values();
     }
 
     @Override
