@@ -4,7 +4,6 @@ import MinRi2.ModCore.ui.*;
 import arc.scene.ui.ImageButton.*;
 import arc.scene.ui.ScrollPane.*;
 import mindustry.gen.*;
-import mindustry.graphics.*;
 import mindustry.ui.*;
 
 import static mindustry.ui.Styles.cleari;
@@ -19,7 +18,7 @@ public class EStyles{
 
     public static void init(){
         cardButtoni = new ImageButtonStyle(cleari){{
-            up = MinTex.getColoredRegion(Pal.lightishGray);
+            up = MinTex.getColoredRegion(EPalettes.gray);
             down = over = MinTex.getColoredRegion(EPalettes.purpleAccent4);
         }};
 

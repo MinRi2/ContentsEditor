@@ -11,6 +11,9 @@ public class EPalettes{
     purpleAccent1 = Color.valueOf("#CC99CC"),
     purpleAccent2 = Color.valueOf("#f39cbc"),
     purpleAccent3 = Color.valueOf("#ffa6a4"),
-    purpleAccent4 = Color.valueOf("#ffb98c");
+    purpleAccent4 = Color.valueOf("#ffb98c"),
+    typePurple = Color.valueOf("#ffcdff"),
+    editSky = Color.valueOf("#597a8d"),
+    gray = Color.valueOf("#767676");
 
 }

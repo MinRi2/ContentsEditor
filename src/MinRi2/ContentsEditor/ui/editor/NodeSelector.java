@@ -1,6 +1,5 @@
 package MinRi2.ContentsEditor.ui.editor;
 
-import MinRi2.ContentsEditor.node.*;
 import arc.func.*;
 import arc.scene.ui.layout.*;
 import cf.wayzer.contentsTweaker.*;
