@@ -1,6 +1,7 @@
 package MinRi2.ContentsEditor.node;
 
 import arc.struct.*;
+import arc.struct.ObjectMap.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
 import cf.wayzer.contentsTweaker.*;
@@ -16,7 +17,6 @@ public class NodeData{
 
     public final CTNode node;
     public final String nodeName;
-    /** Init when {@link #setStringData(String, String)} */
     public JsonValue jsonData;
 
     protected ObjectMap<String, NodeData> children = new ObjectMap<>();
@@ -81,6 +81,19 @@ public class NodeData{
         }
 
         return data;
+    }
+
+    public void removeData(){
+        for(Entry<String, NodeData> entry : children){
+            NodeData childNodeData = entry.value;
+
+            childNodeData.removeData();
+        }
+
+        if(parentData != null){
+            jsonData = null;
+            parentData.removeData(nodeName);
+        }
     }
 
     public void removeData(String name){

@@ -24,9 +24,9 @@ import java.util.Map.*;
 public class NodeCard extends Table{
     private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
     public boolean isChild, working;
-    private NodeData nodeData;
-    private NodeCard parent, childCard;
+    public NodeCard parent, childCard;
 
+    private NodeData nodeData;
     private Seq<Entry<String, CTNode>> sortedChildren;
 
     private String searchText = "";
@@ -48,6 +48,22 @@ public class NodeCard extends Table{
     public void setParent(NodeCard parent){
         isChild = parent != null;
         this.parent = parent;
+    }
+
+    public NodeCard getFrontCard(){
+        NodeCard card = this;
+
+        while((card.parent == null || card.working) && card.childCard != null){
+            card = card.childCard;
+        }
+
+        return card;
+    }
+
+    public void extractWorking(){
+        if(parent != null){
+            parent.editChildNode(null);
+        }
     }
 
     public void rebuild(){
@@ -80,10 +96,10 @@ public class NodeCard extends Table{
 
             cardCont.row();
 
+            rebuildNodesTable();
             cardCont.pane(Styles.noBarPane, nodesTable).grow();
 
-            // Rebuild the nodesTable next frame.
-            Core.app.post(this::rebuildNodesTable);
+            cardCont.layout();
         }
     }
 
@@ -189,16 +205,17 @@ public class NodeCard extends Table{
             }).pad(8f).expandX().left();
 
             nodeTitle.table(Styles.black3, buttonTable -> {
-                buttonTable.defaults().size(64f);
+                buttonTable.defaults().width(64f).growY();
 
-                // Refresh children node
+                // Clear data
                 buttonTable.button(Icon.refresh, Styles.clearNonei, () -> {
+                    nodeData.removeData();
+
+                    getFrontCard().rebuildNodesTable();
                 });
 
-                if(!nodeData.isRoot()){
-                    buttonTable.button(Icon.cancel, Styles.clearNonei, () -> {
-                        parent.editChildNode(null);
-                    });
+                if(parent != null){
+                    buttonTable.button(Icon.cancel, Styles.clearNonei, this::extractWorking);
                 }
             }).growY();
         });

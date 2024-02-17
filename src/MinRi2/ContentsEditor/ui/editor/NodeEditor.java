@@ -3,6 +3,7 @@ package MinRi2.ContentsEditor.ui.editor;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ModCore.ui.*;
+import arc.input.*;
 import mindustry.ui.dialogs.*;
 
 /**
@@ -10,11 +11,13 @@ import mindustry.ui.dialogs.*;
  * Create by 2024/2/15
  */
 public class NodeEditor extends BaseDialog{
+    private final NodeData rootData;
     private final NodeCard card;
 
     public NodeEditor(){
         super("");
 
+        rootData = NodeData.getRootData();
         card = new NodeCard();
 
         setup();
@@ -22,6 +25,11 @@ public class NodeEditor extends BaseDialog{
         resized(this::rebuild);
         shown(this::rebuild);
         hidden(() -> {
+
+        });
+
+        keyDown(KeyCode.up, () -> {
+            card.getFrontCard().extractWorking();
         });
     }
 
@@ -31,7 +39,7 @@ public class NodeEditor extends BaseDialog{
 
         cont.top();
 
-        card.setNodeData(NodeData.getRootData());
+        card.setNodeData(rootData);
 
         addCloseButton();
         makeButtonOverlay();
