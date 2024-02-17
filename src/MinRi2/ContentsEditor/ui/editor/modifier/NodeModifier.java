@@ -1,13 +1,12 @@
-package MinRi2.ContentsEditor.ui.editor;
+package MinRi2.ContentsEditor.ui.editor.modifier;
 
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
+import MinRi2.ContentsEditor.ui.editor.*;
 import MinRi2.ModCore.ui.*;
-import MinRi2.ModCore.ui.element.*;
 import arc.func.*;
 import arc.graphics.*;
 import arc.scene.actions.*;
-import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.serialization.*;
@@ -16,9 +15,7 @@ import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
 import mindustry.*;
 import mindustry.ctype.*;
-import mindustry.gen.*;
 import mindustry.type.*;
-import mindustry.ui.*;
 import mindustry.world.*;
 
 /**
@@ -56,7 +53,7 @@ public class NodeModifier extends Table{
     public void setup(){
         table(infoTable -> {
             // Add node info
-            NodeDisplay.display(infoTable, nodeData);
+            NodeDisplay.displayNameType(infoTable, nodeData);
         }).fill();
 
         table(modifier::build).pad(4).grow();
@@ -65,80 +62,6 @@ public class NodeModifier extends Table{
         row();
         Cell<?> horizontalLine = image().height(4f).color(Color.darkGray).growX();
         horizontalLine.colspan(getColumns());
-    }
-
-    public interface ModifyConsumer<T>{
-        /**
-         * 检查输入数据是否合法
-         */
-        boolean checkValue(T value);
-
-
-        /**
-         * 获取当前或默认的数据
-         */
-        T getData();
-
-        /**
-         * 保存数据
-         */
-        void saveData(T value);
-
-        void removeData();
-    }
-
-    public interface ModifierBuilder<T>{
-        ModifierBuilder<String> textBuilder = (table, consumer) -> {
-            final String[] value = {consumer.getData()};
-
-            TextField field = table.field(value[0], consumer::saveData)
-            .valid(consumer::checkValue).pad(4f).width(100f).get();
-
-            addResetButton(table, consumer, () -> {
-                value[0] = consumer.getData();
-                field.setText(value[0]);
-            });
-        };
-
-        ModifierBuilder<Boolean> booleanBuilder = (table, consumer) -> {
-            final boolean[] value = {consumer.getData()};
-
-            BorderColorImage image = new BorderColorImage();
-            image.colorAction(value[0] ? Color.green : Color.red);
-
-            Cons<Boolean> setColor = bool -> {
-                value[0] = bool;
-                image.colorAction(bool ? Color.green : Color.red);
-            };
-
-            table.button(b -> {
-                b.add(image).size(32f).pad(8f).expandX().left();
-                b.label(() -> value[0] ? "[green]true" : "[red]false").expandX();
-            }, Styles.clearNonei, () -> {
-                setColor.get(!value[0]);
-                consumer.saveData(value[0]);
-            }).grow();
-
-            addResetButton(table, consumer, () -> setColor.get(consumer.getData()));
-        };
-
-        ModifierBuilder<UnlockableContent> contentBuilder = (table, consumer) -> {
-            
-        };
-
-        static void addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
-            table.button(Icon.undo, Styles.clearNonei, () -> {
-                consumer.removeData();
-                clicked.run();
-            }).width(32f).pad(4f).growY().expandX().right().with(b -> {
-                ElementUtils.addTooltip(b, "@node-modifier.undo", true);
-            });
-        }
-
-        /**
-         * 构建UI，提供修改结果
-         */
-        void build(Table table, ModifyConsumer<T> consumer);
     }
 
     public abstract static class BaseModifier<T> implements ModifyConsumer<T>{
@@ -222,6 +145,11 @@ public class NodeModifier extends Table{
 
         public void onModified(Boolc onModified){
             this.onModified = onModified;
+        }
+
+        @Override
+        public Class<?> getDataType(){
+            return nodeData.getObjInfo().getType();
         }
 
         /**
@@ -386,7 +314,7 @@ public class NodeModifier extends Table{
     }
 
     public static class ContentTypeModifier extends BaseModifier<UnlockableContent>{
-        private static ObjectMap<Class<?>, ContentType> contentClassTypeMap = ObjectMap.of(
+        public static ObjectMap<Class<?>, ContentType> contentClassTypeMap = ObjectMap.of(
         Block.class, ContentType.block,
         Item.class, ContentType.item,
         Liquid.class, ContentType.liquid,
@@ -398,6 +326,10 @@ public class NodeModifier extends Table{
 
         protected ContentTypeModifier(NodeData nodeData){
             super(nodeData);
+
+            modifierName = "=";
+            builder = ModifierBuilder.contentBuilder;
+            valueType = ValueType.stringValue;
 
             Class<?> type = nodeData.getObjInfo().getType();
             contentType = contentClassTypeMap.get(type);

@@ -2,6 +2,7 @@ package MinRi2.ContentsEditor.ui.editor;
 
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
+import MinRi2.ContentsEditor.ui.editor.modifier.*;
 import MinRi2.ModCore.ui.*;
 import MinRi2.ModCore.utils.*;
 import arc.*;

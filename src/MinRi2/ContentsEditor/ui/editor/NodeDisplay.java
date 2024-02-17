@@ -39,6 +39,12 @@ public class NodeDisplay{
         );
     }
 
+    private static void set(Table table, CTNode node, String nodeName){
+        NodeDisplay.table = table;
+        NodeDisplay.node = node;
+        NodeDisplay.nodeName = nodeName;
+    }
+
     public static void reset(){
         table = null;
         node = null;
@@ -51,14 +57,12 @@ public class NodeDisplay{
     }
 
     public static void display(Table table, CTNode node, String nodeName){
-        NodeDisplay.table = table;
-        NodeDisplay.node = node;
-        NodeDisplay.nodeName = nodeName;
+        set(table, node, nodeName);
 
         objInfo = NodeHelper.getObjectInfo(node);
 
         if(objInfo == null){
-            table.add(nodeName).wrap().width(labelWidth).pad(4f).expandX().left();
+            displayName();
             return;
         }
 
@@ -66,9 +70,31 @@ public class NodeDisplay{
         reset();
     }
 
+    public static void displayNameType(Table table, NodeData nodeData){
+        displayNameType(table, nodeData.node, nodeData.nodeName);
+    }
+
+    public static void displayNameType(Table table, CTNode node, String nodeName){
+        set(table, node, nodeName);
+
+        objInfo = NodeHelper.getObjectInfo(node);
+
+        if(objInfo == null){
+            displayName();
+            return;
+        }
+
+        displayNameType();
+        reset();
+    }
+
+    private static void displayName(){
+        table.add(nodeName).wrap().width(labelWidth).pad(4f).expandX().left();
+    }
+
     private static void displayObject(Object object){
         if(object == null){
-            displayDefault();
+            displayNameType();
             return;
         }
 
@@ -81,12 +107,12 @@ public class NodeDisplay{
         }else if(object instanceof Weapon weapon){
             displayWeapon(weapon);
         }else{
-            displayDefault();
+            displayNameType();
         }
     }
 
 
-    private static void displayDefault(){
+    private static void displayNameType(){
         table.table(nodeInfoTable -> {
             nodeInfoTable.defaults().expandX().left();
 
@@ -113,13 +139,13 @@ public class NodeDisplay{
     }
 
     private static void displayContent(UnlockableContent content){
-        displayDefault();
+        displayNameType();
 
         displayInfo(new TextureRegionDrawable(content.uiIcon), content.localizedName);
     }
 
     private static void displayContentType(ContentType contentType){
-        displayDefault();
+        displayNameType();
 
         Seq<?> seq = Vars.content.getBy(contentType);
         if(seq.isEmpty()){
@@ -138,7 +164,7 @@ public class NodeDisplay{
     }
 
     private static void displayWeapon(Weapon weapon){
-        displayDefault();
+        displayNameType();
 
         displayInfo(new TextureRegionDrawable(weapon.region), weapon.name);
     }
