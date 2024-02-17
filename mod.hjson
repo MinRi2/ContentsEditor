@@ -24,4 +24,4 @@ java: true
 
 hidden: true
 
-dependencies: ["contentstweaker", "min-mod-core"]
+dependencies: ["contentstweaker"]
