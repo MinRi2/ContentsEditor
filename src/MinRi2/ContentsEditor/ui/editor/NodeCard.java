@@ -3,8 +3,11 @@ package MinRi2.ContentsEditor.ui.editor;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ModCore.ui.*;
+import MinRi2.ModCore.utils.*;
 import arc.*;
 import arc.graphics.*;
+import arc.scene.ui.ImageButton.*;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
 import cf.wayzer.contentsTweaker.*;
@@ -19,17 +22,23 @@ import java.util.Map.*;
  * Create by 2024/2/16
  */
 public class NodeCard extends Table{
-    private final Table cardCont; // workingTable / childrenNodesTable
+    private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
     public boolean isChild, working;
     private NodeData nodeData;
     private NodeCard parent, childCard;
+
     private Seq<Entry<String, CTNode>> sortedChildren;
+
+    private String searchText = "";
+    private final DebounceTask debounceRebuild = new DebounceTask(0.5f, this::rebuildNodesTable);
 
     public NodeCard(){
         cardCont = new Table();
+        nodesTable = new Table();
 
         top().left();
         cardCont.top();
+        nodesTable.top().left();
     }
 
     public void setNodeData(NodeData nodeData){
@@ -67,25 +76,43 @@ public class NodeCard extends Table{
         if(working){
             cardCont.add(childCard).grow();
         }else{
-            cardCont.table(searchTable -> {
-                searchTable.add("Search").left();
-            }).growX();
+            cardCont.table(this::setupSearchTable).pad(8f).growX();
 
             cardCont.row();
 
-            // Set up the nodesTable next frame.
-            cardCont.pane(Styles.noBarPane, t -> Core.app.post(() -> {
-                setupNodesTable(t);
-            })).grow();
+            cardCont.pane(Styles.noBarPane, nodesTable).grow();
+
+            // Rebuild the nodesTable next frame.
+            Core.app.post(this::rebuildNodesTable);
         }
     }
 
-    private void setupNodesTable(Table table){
-        float buttonWidth = 250f / Scl.scl();
-        int columns = Math.max(1, (int)(table.getWidth() / Scl.scl() / buttonWidth));
+    private void setupSearchTable(Table table){
+        table.image(Icon.zoom).size(64f);
 
-        table.top().left();
-        table.defaults().size(buttonWidth, buttonWidth / 4).pad(4f).margin(8f);
+        TextField field = table.field(searchText, text -> {
+            searchText = text;
+            debounceRebuild.run();
+        }).pad(8f).growX().get();
+
+        if(Core.app.isDesktop()){
+            Core.scene.setKeyboardFocus(field);
+        }
+
+        table.button(Icon.cancel, Styles.clearNonei, () -> {
+            searchText = "";
+            field.setText(searchText);
+            rebuildNodesTable();
+        }).size(64f);
+    }
+
+    private void rebuildNodesTable(){
+        nodesTable.clearChildren();
+
+        float buttonWidth = 250f / Scl.scl();
+        int columns = Math.max(1, (int)(nodesTable.getWidth() / Scl.scl() / buttonWidth));
+
+        nodesTable.defaults().size(buttonWidth, buttonWidth / 4).pad(4f).margin(8f).top().left();
 
         Seq<Entry<String, CTNode>> children = getSortedChildren();
 
@@ -94,14 +121,18 @@ public class NodeCard extends Table{
             CTNode childNode = entry.getValue();
             String childNodeName = entry.getKey();
 
+            if(!searchText.isEmpty() && !childNodeName.toLowerCase().contains(searchText.toLowerCase())){
+                continue;
+            }
+
             if(NodeModifier.modifiable(childNode)){
-                addEditTable(table, childNodeName);
+                addEditTable(nodesTable, childNodeName);
             }else{
-                addChildButton(table, childNode, childNodeName);
+                addChildButton(nodesTable, childNode, childNodeName);
             }
 
             if(++index % columns == 0){
-                table.row();
+                nodesTable.row();
             }
         }
     }
@@ -109,10 +140,12 @@ public class NodeCard extends Table{
     private void addEditTable(Table table, String childNodeName){
         NodeData childNodeData = nodeData.getChild(childNodeName);
 
-        table.add(new NodeModifier(childNodeData)).grow();
+        table.add(new NodeModifier(childNodeData));
     }
 
     private void addChildButton(Table table, CTNode childNode, String childNodeName){
+        ImageButtonStyle style = nodeData.hasData(childNodeName) ? EStyles.cardModifiedButtoni : EStyles.cardButtoni;
+
         table.button(b -> {
             NodeDisplay.display(b, childNode, childNodeName);
 
@@ -120,7 +153,7 @@ public class NodeCard extends Table{
             b.row();
             Cell<?> horizontalLine = b.image().height(4f).color(Color.darkGray).growX();
             horizontalLine.colspan(b.getColumns());
-        }, EStyles.cardButtoni, () -> {
+        }, style, () -> {
             NodeData childNodeData = nodeData.getChild(childNodeName);
             editChildNode(childNodeData);
 
@@ -182,10 +215,7 @@ public class NodeCard extends Table{
             CTNode n1 = e1.getValue();
             CTNode n2 = e2.getValue();
 
-            int settable = Boolean.compare(!NodeModifier.modifiable(n1), !NodeModifier.modifiable(n2));
-            if(settable != 0) return settable;
-
-            return settable;
+            return Boolean.compare(!NodeModifier.modifiable(n1), !NodeModifier.modifiable(n2));
         });
 
         return sortedChildren;

@@ -38,7 +38,7 @@ public class NodeData{
     }
 
     public void initJsonData(){
-        if(jsonData != null || parentData == null){
+        if(parentData == null || jsonData != null){
             return;
         }
 
@@ -84,15 +84,16 @@ public class NodeData{
     }
 
     public void removeData(String name){
-        if(hasData(name)){
+        if(!hasData(name)){
             return;
         }
-        
+
         jsonData.remove(name);
 
-        // This jsonData is empty after removing. Remove jsonData from parent.
-        if(jsonData.size == 0 && parentData != null){
+        // 删除子数据后 该jsonData就没有子数据了 清除掉
+        if(jsonData.child == null && parentData != null){
             parentData.removeData(nodeName);
+            jsonData = null;
         }
     }
 

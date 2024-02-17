@@ -13,6 +13,7 @@ import mindustry.*;
 import mindustry.content.*;
 import mindustry.ctype.*;
 import mindustry.gen.*;
+import mindustry.type.*;
 
 /**
  * @author minri2
@@ -77,10 +78,13 @@ public class NodeDisplay{
         && contentType.contentClass != null
         && UnlockableContent.class.isAssignableFrom(contentType.contentClass)){
             displayContentType(contentType);
+        }else if(object instanceof Weapon weapon){
+            displayWeapon(weapon);
         }else{
             displayDefault();
         }
     }
+
 
     private static void displayDefault(){
         table.table(nodeInfoTable -> {
@@ -105,12 +109,10 @@ public class NodeDisplay{
             valueTable.image(icon).scaling(Scaling.fit).size(Vars.iconLarge);
             valueTable.row();
             valueTable.add(value).labelAlign(Align.right).ellipsis(true).width(labelWidth).padTop(4f);
-        }).pad(4f).right();
+        }).width(labelWidth).pad(4f).right();
     }
 
     private static void displayContent(UnlockableContent content){
-        table.top();
-
         displayDefault();
 
         displayInfo(new TextureRegionDrawable(content.uiIcon), content.localizedName);
@@ -133,6 +135,12 @@ public class NodeDisplay{
         icon = contentSymbolMap.get(contentType, icon);
 
         displayInfo(icon, Strings.capitalize(contentType.name()));
+    }
+
+    private static void displayWeapon(Weapon weapon){
+        displayDefault();
+
+        displayInfo(new TextureRegionDrawable(weapon.region), weapon.name);
     }
 
 }

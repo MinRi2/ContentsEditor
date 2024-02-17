@@ -3,14 +3,19 @@ package MinRi2.ContentsEditor.ui.editor;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ModCore.ui.*;
+import MinRi2.ModCore.ui.element.*;
 import arc.func.*;
 import arc.graphics.*;
+import arc.scene.actions.*;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
+import mindustry.gen.*;
+import mindustry.ui.*;
 
 /**
  * @author minri2
@@ -28,7 +33,12 @@ public class NodeModifier extends Table{
         setup();
 
         background(MinTex.whiteuiRegion);
-        setColor(EPalettes.editSky);
+        setColor(modifier.modified() ? EPalettes.modified : EPalettes.unmodified);
+
+        modifier.onModified(modified -> {
+            Color color = modified ? EPalettes.modified : EPalettes.unmodified;
+            addAction(Actions.color(color, 0.5f));
+        });
     }
 
     public static boolean modifiable(CTNode node){
@@ -40,12 +50,12 @@ public class NodeModifier extends Table{
     }
 
     public void setup(){
-        table(cont -> {
+        table(infoTable -> {
             // Add node info
-            NodeDisplay.display(cont, nodeData);
+            NodeDisplay.display(infoTable, nodeData);
+        }).fill();
 
-            cont.table(modifier::build).grow();
-        }).grow();
+        table(modifier::build).pad(4).grow();
 
         image().width(4f).color(Color.darkGray).growY().right();
         row();
@@ -54,22 +64,66 @@ public class NodeModifier extends Table{
     }
 
     public interface ModifyConsumer<T>{
-        boolean checkTypeValid(T value);
+        /**
+         * 检查输入数据是否合法
+         */
+        boolean checkValue(T value);
 
+
+        /**
+         * 获取当前或默认的数据
+         */
         T getData();
 
-        void setJsonData(T value);
+        /**
+         * 保存数据
+         */
+        void saveData(T value);
+
+        void removeData();
     }
 
     public interface ModifierBuilder<T>{
         ModifierBuilder<String> textBuilder = (table, consumer) -> {
-            String value = consumer.getData();
-            table.field(value, consumer::setJsonData).valid(consumer::checkTypeValid).growX();
+            final String[] value = {consumer.getData()};
+
+            TextField field = table.field(value[0], consumer::saveData)
+            .valid(consumer::checkValue).pad(4f).width(100f).get();
+
+            addResetButton(table, consumer, () -> {
+                value[0] = consumer.getData();
+                field.setText(value[0]);
+            });
         };
+
         ModifierBuilder<Boolean> booleanBuilder = (table, consumer) -> {
-            boolean value = consumer.getData();
-            table.add("BOOLEANEDIT: " + value);
+            final boolean[] value = {consumer.getData()};
+
+            BorderColorImage image = new BorderColorImage();
+            image.colorAction(value[0] ? Color.green : Color.red);
+
+            Cons<Boolean> setColor = bool -> {
+                value[0] = bool;
+                image.colorAction(bool ? Color.green : Color.red);
+            };
+
+            table.button(b -> {
+                b.add(image).size(32f).pad(8f).expandX().left();
+                b.label(() -> value[0] ? "[green]true" : "[red]false").expandX();
+            }, Styles.clearNonei, () -> {
+                setColor.get(!value[0]);
+                consumer.saveData(value[0]);
+            }).grow();
+
+            addResetButton(table, consumer, () -> setColor.get(consumer.getData()));
         };
+
+        static void addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
+            table.button(Icon.redoSmall, Styles.clearNonei, () -> {
+                consumer.removeData();
+                clicked.run();
+            }).width(32f).pad(4f).growY().expandX().right();
+        }
 
         /**
          * 构建UI，提供修改结果
@@ -82,10 +136,11 @@ public class NodeModifier extends Table{
 
         static{
             modifyConfig.addAll(
-            new ModifierConfig(StringModifier::new, String.class),
-            new ModifierConfig(NumberModifier::new,
+            new ModifierConfig("=", StringModifier::new, String.class),
+            new ModifierConfig("=", NumberModifier::new,
             Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class,
-            byte.class, short.class, int.class, long.class, float.class, double.class)
+            byte.class, short.class, int.class, long.class, float.class, double.class),
+            new ModifierConfig("=", BooleanModifier::new, Boolean.class, boolean.class)
             );
         }
 
@@ -93,6 +148,8 @@ public class NodeModifier extends Table{
         protected String modifierName;
         protected ModifierBuilder<T> builder;
         protected ValueType valueType;
+
+        private Boolc onModified;
 
         protected BaseModifier(NodeData nodeData){
             this.nodeData = nodeData;
@@ -105,10 +162,8 @@ public class NodeModifier extends Table{
                 return false;
             }
 
-            Class<?> type = objInfo.getType();
-
             for(ModifierConfig config : modifyConfig){
-                if(config.canModify(type)){
+                if(config.canModify(node)){
                     return true;
                 }
             }
@@ -123,10 +178,9 @@ public class NodeModifier extends Table{
                 return null;
             }
 
-            Class<?> type = objInfo.getType();
-
+            CTNode node = nodeData.node;
             for(ModifierConfig config : modifyConfig){
-                if(config.canModify(type)){
+                if(config.canModify(node)){
                     return config.modifierProv.get(nodeData);
                 }
             }
@@ -142,34 +196,100 @@ public class NodeModifier extends Table{
             return nodeData.getData(modifierName, valueType);
         }
 
+        public T getDefaultData(){
+            Object object = nodeData.getObjInfo().getObj();
+            return parse(object);
+        }
+
+        public boolean modified(){
+            return nodeData.hasData(modifierName);
+        }
+
+        public void onModified(Boolc onModified){
+            this.onModified = onModified;
+        }
+
+        /**
+         * 获取节点数据的jsonData
+         * 会创建数据链
+         */
         @Override
-        public final void setJsonData(T value){
-            setJsonData(getJsonData(), value);
+        public final T getData(){
+            if(nodeData.hasData(modifierName)){
+                return getDataJson(getJsonData());
+            }
+
+            return getDefaultData();
         }
 
         @Override
-        public final boolean checkTypeValid(T value){
+        public final void saveData(T value){
+            setDataJson(getJsonData(), value);
+
+            if(onModified != null){
+                onModified.get(true);
+            }
+        }
+
+        @Override
+        public final void removeData(){
+            nodeData.removeData(modifierName);
+
+            if(onModified != null){
+                onModified.get(false);
+            }
+        }
+
+        @Override
+        public final boolean checkValue(T value){
             Class<?> type = nodeData.getObjInfo().getType();
             return checkTypeValid(value, type);
         }
 
-        protected abstract void setJsonData(JsonValue jsonData, T value);
+        /**
+         * 将数据保存
+         * 由子类实现
+         * @param jsonData 保存到的JsonValue
+         */
+        protected abstract void setDataJson(JsonValue jsonData, T value);
 
+        /**
+         * 从JsonValue中读取数据
+         * 由子类实现
+         * @param jsonData 读取的JsonValue
+         */
+        protected abstract T getDataJson(JsonValue jsonData);
+
+        /**
+         * 给定类型 判断数据是否符合类型
+         */
         protected boolean checkTypeValid(T value, Class<?> type){
             return true;
         }
 
+        public abstract T parse(Object object);
+
         public static class ModifierConfig{
+            public final String modifierName;
             public final Func<NodeData, BaseModifier<?>> modifierProv;
             public final Seq<Class<?>> modifierTypes = new Seq<>();
 
-            public ModifierConfig(Func<NodeData, BaseModifier<?>> modifierProv, Class<?>... types){
+            public ModifierConfig(String modifierName, Func<NodeData, BaseModifier<?>> modifierProv, Class<?>... types){
+                this.modifierName = modifierName;
                 this.modifierProv = modifierProv;
                 modifierTypes.addAll(types);
             }
 
-            public boolean canModify(Class<?> type){
-                return modifierTypes.contains(type);
+            public boolean canModify(CTNode node){
+                ObjInfo<?> objInfo = NodeHelper.getObjectInfo(node);
+
+                if(objInfo == null){
+                    return false;
+                }
+
+                node.collectAll();
+                return node.getChildren().containsKey(modifierName)
+                && modifierTypes.contains(objInfo.getType());
             }
         }
     }
@@ -184,16 +304,18 @@ public class NodeModifier extends Table{
         }
 
         @Override
-        public String getData(){
-            if(nodeData.hasData(modifierName)){
-                return getJsonData().asString();
-            }
-            return String.valueOf(nodeData.getObjInfo().getObj());
+        protected void setDataJson(JsonValue jsonData, String value){
+            jsonData.set(value);
         }
 
         @Override
-        protected void setJsonData(JsonValue jsonData, String value){
-            jsonData.set(value);
+        protected String getDataJson(JsonValue jsonData){
+            return jsonData.asString();
+        }
+
+        @Override
+        public String parse(Object object){
+            return String.valueOf(object);
         }
     }
 
@@ -220,6 +342,31 @@ public class NodeModifier extends Table{
             }catch(Exception ignored){
                 return false;
             }
+        }
+    }
+
+    public static class BooleanModifier extends BaseModifier<Boolean>{
+        protected BooleanModifier(NodeData nodeData){
+            super(nodeData);
+
+            modifierName = "=";
+            builder = ModifierBuilder.booleanBuilder;
+            valueType = ValueType.booleanValue;
+        }
+
+        @Override
+        protected void setDataJson(JsonValue jsonData, Boolean value){
+            jsonData.set(value);
+        }
+
+        @Override
+        protected Boolean getDataJson(JsonValue jsonData){
+            return jsonData.asBoolean();
+        }
+
+        @Override
+        public Boolean parse(Object object){
+            return (Boolean)object;
         }
     }
 }

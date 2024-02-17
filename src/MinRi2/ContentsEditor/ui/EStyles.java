@@ -13,13 +13,17 @@ import static mindustry.ui.Styles.cleari;
  * Create by 2024/2/15
  */
 public class EStyles{
-    public static ImageButtonStyle cardButtoni;
+    public static ImageButtonStyle cardButtoni, cardModifiedButtoni;
     public static ScrollPaneStyle cardGrayPane, cardPane;
 
     public static void init(){
         cardButtoni = new ImageButtonStyle(cleari){{
             up = MinTex.getColoredRegion(EPalettes.gray);
             down = over = MinTex.getColoredRegion(EPalettes.purpleAccent4);
+        }};
+
+        cardModifiedButtoni = new ImageButtonStyle(cardButtoni){{
+            up = MinTex.getColoredRegion(EPalettes.modified);
         }};
 
         cardGrayPane = new ScrollPaneStyle(){{
