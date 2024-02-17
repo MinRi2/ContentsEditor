@@ -50,7 +50,7 @@ public class NodeData{
         this.jsonData = jsonData;
     }
 
-    public NodeData getOrCreate(String childName){
+    public NodeData getChild(String childName){
         node.collectAll();
         CTNode child = node.getChildren().get(childName);
 
@@ -70,19 +70,24 @@ public class NodeData{
         this.parentData = parentData;
     }
 
-    public void setStringData(String name, String value){
+    public JsonValue getData(String name, ValueType valueType){
         initJsonData();
 
         JsonValue data = jsonData.get(name);
+
         if(data == null){
-            data = new JsonValue(ValueType.stringValue);
+            data = new JsonValue(valueType);
             jsonData.addChild(name, data);
         }
 
-        data.set(value);
+        return data;
     }
 
     public void removeData(String name){
+        if(hasData(name)){
+            return;
+        }
+        
         jsonData.remove(name);
 
         // This jsonData is empty after removing. Remove jsonData from parent.
@@ -92,15 +97,15 @@ public class NodeData{
     }
 
     public boolean hasData(String name){
-        return jsonData.has(name);
-    }
-
-    public ObjInfo<?> getObjInfo(){
-        return NodeHelper.getObjectInfo(node);
+        return jsonData != null && jsonData.has(name);
     }
 
     public boolean isRoot(){
         return this == rootData;
+    }
+
+    public ObjInfo<?> getObjInfo(){
+        return NodeHelper.getObjectInfo(node);
     }
 
     @Override

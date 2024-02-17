@@ -107,7 +107,7 @@ public class NodeCard extends Table{
     }
 
     private void addEditTable(Table table, String childNodeName){
-        NodeData childNodeData = nodeData.getOrCreate(childNodeName);
+        NodeData childNodeData = nodeData.getChild(childNodeName);
 
         table.add(new NodeModifier(childNodeData)).grow();
     }
@@ -121,7 +121,7 @@ public class NodeCard extends Table{
             Cell<?> horizontalLine = b.image().height(4f).color(Color.darkGray).growX();
             horizontalLine.colspan(b.getColumns());
         }, EStyles.cardButtoni, () -> {
-            NodeData childNodeData = nodeData.getOrCreate(childNodeName);
+            NodeData childNodeData = nodeData.getChild(childNodeName);
             editChildNode(childNodeData);
 
             rebuildCont();

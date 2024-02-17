@@ -8,6 +8,7 @@ import arc.graphics.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.serialization.*;
+import arc.util.serialization.JsonValue.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
 
@@ -16,40 +17,13 @@ import cf.wayzer.contentsTweaker.CTNode.*;
  * Create by 2024/2/16
  */
 public class NodeModifier extends Table{
-    public static final Seq<ModifierConfig> modifierBuilders = new Seq<>();
-
-    public static ModifierBuilder textBuilder = (table, parameters) -> {
-        Boolf<String> typeChecker = parameters.typeChecker;
-
-        String value = "" + parameters.defaultValue;
-        JsonValue jsonData = parameters.jsonDataProv.get();
-        if(jsonData != null){
-            value = jsonData.asString();
-        }
-
-        table.field(value, parameters.consumer).valid(typeChecker::get).growX();
-    }, booleanBuilder = (table, parameters) -> {
-
-        boolean value = (boolean)parameters.defaultValue;
-        JsonValue jsonData = parameters.jsonDataProv.get();
-        if(jsonData != null){
-            value = jsonData.asBoolean();
-        }
-        table.add("BOOLEANEDIT: " + value);
-    };
-
-    static{
-        modifierBuilders.addAll(
-        new ModifierConfig(ModifierType.set, textBuilder, String.class),
-        new NumberModifierConfig(),
-        new ModifierConfig(ModifierType.set, booleanBuilder, Boolean.class, boolean.class)
-        );
-    }
-
     private final NodeData nodeData;
+
+    private final BaseModifier<?> modifier;
 
     public NodeModifier(NodeData nodeData){
         this.nodeData = nodeData;
+        this.modifier = getModifier(nodeData);
 
         setup();
 
@@ -58,24 +32,11 @@ public class NodeModifier extends Table{
     }
 
     public static boolean modifiable(CTNode node){
-        return NodeModifier.getBuilder(node) != null;
+        return BaseModifier.modifiable(node);
     }
 
-    public static ModifierConfig getBuilder(CTNode node){
-        ObjInfo<?> objInfo = NodeHelper.getObjectInfo(node);
-
-        if(objInfo == null){
-            return null;
-        }
-
-        Class<?> type = objInfo.getType();
-
-        if(type.isAnonymousClass()){
-            type = type.getSuperclass();
-        }
-
-        Class<?> finalType = type;
-        return modifierBuilders.find(b -> b.canModify(finalType));
+    public static BaseModifier<?> getModifier(NodeData nodeData){
+        return BaseModifier.getModifier(nodeData);
     }
 
     public void setup(){
@@ -83,7 +44,7 @@ public class NodeModifier extends Table{
             // Add node info
             NodeDisplay.display(cont, nodeData);
 
-            cont.table(this::setupModifierTable).grow();
+            cont.table(modifier::build).grow();
         }).grow();
 
         image().width(4f).color(Color.darkGray).growY().right();
@@ -92,96 +53,153 @@ public class NodeModifier extends Table{
         horizontalLine.colspan(getColumns());
     }
 
-    private void setupModifierTable(Table table){
-        ModifierConfig builder = getBuilder(nodeData.node);
+    public interface ModifyConsumer<T>{
+        boolean checkTypeValid(T value);
 
-        // impossible
-        if(builder == null){
-            return;
-        }
+        T getData();
 
-        builder.build(table, nodeData);
+        void setJsonData(T value);
     }
 
-    public enum ModifierType{
-        set("="),
-        add("+"),
-        append("+=");
+    public interface ModifierBuilder<T>{
+        ModifierBuilder<String> textBuilder = (table, consumer) -> {
+            String value = consumer.getData();
+            table.field(value, consumer::setJsonData).valid(consumer::checkTypeValid).growX();
+        };
+        ModifierBuilder<Boolean> booleanBuilder = (table, consumer) -> {
+            boolean value = consumer.getData();
+            table.add("BOOLEANEDIT: " + value);
+        };
 
-        public final String modifierName;
-
-        ModifierType(String modifierName){
-            this.modifierName = modifierName;
-        }
-    }
-
-    public interface ModifierBuilder{
         /**
          * 构建UI，提供修改结果
          */
-        void build(Table table, BuilderParameters parameters);
+        void build(Table table, ModifyConsumer<T> consumer);
     }
 
-    public static class BuilderParameters{
-        public static final BuilderParameters parameters = new BuilderParameters();
+    public abstract static class BaseModifier<T> implements ModifyConsumer<T>{
+        public static final Seq<ModifierConfig> modifyConfig = new Seq<>();
 
-        public Object defaultValue;
-        public Prov<JsonValue> jsonDataProv;
-        public Boolf<String> typeChecker;
-        public Cons<String> consumer;
-
-        private BuilderParameters(){
-
+        static{
+            modifyConfig.addAll(
+            new ModifierConfig(StringModifier::new, String.class),
+            new ModifierConfig(NumberModifier::new,
+            Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class,
+            byte.class, short.class, int.class, long.class, float.class, double.class)
+            );
         }
 
-        public BuilderParameters set(ModifierConfig config, NodeData nodeData){
+        public final NodeData nodeData;
+        protected String modifierName;
+        protected ModifierBuilder<T> builder;
+        protected ValueType valueType;
+
+        protected BaseModifier(NodeData nodeData){
+            this.nodeData = nodeData;
+        }
+
+        public static boolean modifiable(CTNode node){
+            ObjInfo<?> objInfo = NodeHelper.getObjectInfo(node);
+
+            if(objInfo == null){
+                return false;
+            }
+
+            Class<?> type = objInfo.getType();
+
+            for(ModifierConfig config : modifyConfig){
+                if(config.canModify(type)){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static BaseModifier<?> getModifier(NodeData nodeData){
+            ObjInfo<?> objInfo = nodeData.getObjInfo();
+
+            if(objInfo == null){
+                return null;
+            }
+
+            Class<?> type = objInfo.getType();
+
+            for(ModifierConfig config : modifyConfig){
+                if(config.canModify(type)){
+                    return config.modifierProv.get(nodeData);
+                }
+            }
+
+            return null;
+        }
+
+        public void build(Table table){
+            builder.build(table, this);
+        }
+
+        public JsonValue getJsonData(){
+            return nodeData.getData(modifierName, valueType);
+        }
+
+        @Override
+        public final void setJsonData(T value){
+            setJsonData(getJsonData(), value);
+        }
+
+        @Override
+        public final boolean checkTypeValid(T value){
             Class<?> type = nodeData.getObjInfo().getType();
-            String modifierName = config.getModifierName();
-
-            defaultValue = nodeData.getObjInfo().getObj();
-            jsonDataProv = () -> nodeData.jsonData == null ? null : nodeData.jsonData.get(modifierName);
-            typeChecker = string -> config.checkTypeValid(string, type);
-            consumer = string -> nodeData.setStringData(config.getModifierName(), string);
-
-            return this;
-        }
-    }
-
-    public static class ModifierConfig{
-        private final Seq<Class<?>> modifyTypes = new Seq<>();
-        private final ModifierBuilder builder;
-        private final ModifierType modifierType;
-
-        public ModifierConfig(ModifierType modifierType, ModifierBuilder builder, Class<?>... modifyTypes){
-            this.modifierType = modifierType;
-            this.builder = builder;
-            this.modifyTypes.addAll(modifyTypes);
+            return checkTypeValid(value, type);
         }
 
-        public String getModifierName(){
-            return modifierType.modifierName;
-        }
+        protected abstract void setJsonData(JsonValue jsonData, T value);
 
-        public boolean canModify(Class<?> clazz){
-            return modifyTypes.contains(clazz);
-        }
-
-        public final void build(Table table, NodeData nodeData){
-            BuilderParameters parameters = BuilderParameters.parameters.set(this, nodeData);
-            builder.build(table, parameters);
-        }
-
-        public boolean checkTypeValid(String string, Class<?> type){
+        protected boolean checkTypeValid(T value, Class<?> type){
             return true;
         }
+
+        public static class ModifierConfig{
+            public final Func<NodeData, BaseModifier<?>> modifierProv;
+            public final Seq<Class<?>> modifierTypes = new Seq<>();
+
+            public ModifierConfig(Func<NodeData, BaseModifier<?>> modifierProv, Class<?>... types){
+                this.modifierProv = modifierProv;
+                modifierTypes.addAll(types);
+            }
+
+            public boolean canModify(Class<?> type){
+                return modifierTypes.contains(type);
+            }
+        }
     }
 
-    public static class NumberModifierConfig extends ModifierConfig{
+    public static class StringModifier extends BaseModifier<String>{
+        protected StringModifier(NodeData nodeData){
+            super(nodeData);
 
-        public NumberModifierConfig(){
-            super(ModifierType.set, textBuilder,
-            Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class,
-            byte.class, short.class, int.class, long.class, float.class, double.class);
+            modifierName = "=";
+            builder = ModifierBuilder.textBuilder;
+            valueType = ValueType.stringValue;
+        }
+
+        @Override
+        public String getData(){
+            if(nodeData.hasData(modifierName)){
+                return getJsonData().asString();
+            }
+            return String.valueOf(nodeData.getObjInfo().getObj());
+        }
+
+        @Override
+        protected void setJsonData(JsonValue jsonData, String value){
+            jsonData.set(value);
+        }
+    }
+
+    public static class NumberModifier extends StringModifier{
+        public NumberModifier(NodeData nodeData){
+            super(nodeData);
         }
 
         @Override
