@@ -15,6 +15,7 @@ public class EPalettes{
     typePurple = Color.valueOf("#ffcdff"),
     unmodified = Color.valueOf("#597a8d"),
     modified = Color.valueOf("#a3673e"),
-    gray = Color.valueOf("#767676");
+    gray = Color.valueOf("#767676"),
+    grayFront = Color.valueOf("#b2b2b2");
 
 }

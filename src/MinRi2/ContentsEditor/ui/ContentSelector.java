@@ -1,12 +1,12 @@
 package MinRi2.ContentsEditor.ui;
 
 import arc.func.*;
+import arc.graphics.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
+import arc.util.*;
 import mindustry.*;
 import mindustry.ctype.*;
-import mindustry.graphics.*;
-import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
 
 /**
@@ -47,28 +47,34 @@ public class ContentSelector extends BaseDialog{
 
             pane.button(table -> {
                 setupContentTable(table, content);
-            }, Styles.defaultb, () -> {
+            }, EStyles.cardButtoni, () -> {
                 if(consumer.get(content)){
                     hide();
                 }
-            }).growX();
+            }).pad(8f).growX();
 
-            if(++index % 3 == 0){
+            if(++index % 5 == 0){
                 pane.row();
             }
         }
     }
 
     private void setupContentTable(Table table, UnlockableContent content){
-        table.image(content.uiIcon).size(64f).pad(8f).expandX().left();
+        table.image(content.uiIcon).scaling(Scaling.fit).size(48f).pad(8f).expandX().left();
 
         table.table(infoTable -> {
-            infoTable.defaults().pad(4f).expandX().right();
+            infoTable.right();
+            infoTable.defaults().pad(4f).right();
 
             infoTable.add(content.localizedName);
             infoTable.row();
-            infoTable.add(content.name).color(Pal.gray);
-        }).expandX();
+            infoTable.add(content.name).color(EPalettes.grayFront);
+        });
+
+        table.image().width(4f).color(Color.darkGray).growY().right();
+        table.row();
+        Cell<?> horizontalLine = table.image().height(4f).color(Color.darkGray).growX();
+        horizontalLine.colspan(table.getColumns());
     }
 
     public void select(ContentType contentType, Boolf<UnlockableContent> selectable, Boolf<UnlockableContent> consumer){
