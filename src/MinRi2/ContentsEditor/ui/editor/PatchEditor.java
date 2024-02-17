@@ -2,19 +2,23 @@ package MinRi2.ContentsEditor.ui.editor;
 
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
+import MinRi2.ContentsEditor.ui.editor.PatchManager.*;
 import MinRi2.ModCore.ui.*;
 import arc.input.*;
+import arc.util.serialization.JsonWriter.*;
 import mindustry.ui.dialogs.*;
 
 /**
  * @author minri2
  * Create by 2024/2/15
  */
-public class NodeEditor extends BaseDialog{
+public class PatchEditor extends BaseDialog{
     private final NodeData rootData;
     private final NodeCard card;
 
-    public NodeEditor(){
+    private Patch editPatch;
+
+    public PatchEditor(){
         super("");
 
         rootData = NodeData.getRootData();
@@ -25,12 +29,23 @@ public class NodeEditor extends BaseDialog{
         resized(this::rebuild);
         shown(this::rebuild);
         hidden(() -> {
-
+            if(editPatch != null){
+                editPatch.json = rootData.jsonData.toJson(OutputType.minimal);
+            }
         });
 
         keyDown(KeyCode.up, () -> {
             card.getFrontCard().extractWorking();
         });
+    }
+
+    public void edit(Patch patch){
+        editPatch = patch;
+
+        rootData.clearData();
+        rootData.jsonData = editPatch.getJsonData();
+
+        show();
     }
 
     protected void setup(){

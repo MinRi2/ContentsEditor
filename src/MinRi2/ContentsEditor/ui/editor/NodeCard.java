@@ -69,7 +69,6 @@ public class NodeCard extends Table{
     public void rebuild(){
         clearChildren();
 
-        // Not working.
         if(nodeData == null){
             return;
         }
@@ -96,10 +95,10 @@ public class NodeCard extends Table{
 
             cardCont.row();
 
-            rebuildNodesTable();
-            cardCont.pane(Styles.noBarPane, nodesTable).grow();
+            cardCont.pane(Styles.noBarPane, nodesTable).fill();
 
-            cardCont.layout();
+            // 下一帧再重构
+            Core.app.post(this::rebuildNodesTable);
         }
     }
 
@@ -124,6 +123,11 @@ public class NodeCard extends Table{
 
     private void rebuildNodesTable(){
         nodesTable.clearChildren();
+
+        // 下一帧可能正好被清除
+        if(nodeData == null){
+            return;
+        }
 
         float buttonWidth = 250f / Scl.scl();
         int columns = Math.max(1, (int)(nodesTable.getWidth() / Scl.scl() / buttonWidth));
@@ -189,6 +193,7 @@ public class NodeCard extends Table{
 
         childCard.setNodeData(childNodeData);
         childCard.rebuild();
+
         rebuild();
     }
 
@@ -209,7 +214,7 @@ public class NodeCard extends Table{
 
                 // Clear data
                 buttonTable.button(Icon.refresh, Styles.clearNonei, () -> {
-                    nodeData.removeData();
+                    nodeData.clearData();
 
                     getFrontCard().rebuildNodesTable();
                 });

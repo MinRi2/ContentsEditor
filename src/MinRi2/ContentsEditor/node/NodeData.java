@@ -83,11 +83,11 @@ public class NodeData{
         return data;
     }
 
-    public void removeData(){
+    public void clearData(){
         for(Entry<String, NodeData> entry : children){
             NodeData childNodeData = entry.value;
 
-            childNodeData.removeData();
+            childNodeData.clearData();
         }
 
         if(parentData != null){

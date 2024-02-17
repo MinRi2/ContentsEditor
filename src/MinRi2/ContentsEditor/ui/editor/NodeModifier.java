@@ -119,7 +119,7 @@ public class NodeModifier extends Table{
         };
 
         static void addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
-            table.button(Icon.redoSmall, Styles.clearNonei, () -> {
+            table.button(Icon.undo, Styles.clearNonei, () -> {
                 consumer.removeData();
                 clicked.run();
             }).width(32f).pad(4f).growY().expandX().right();
