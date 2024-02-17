@@ -163,7 +163,7 @@ public class PatchManager extends BaseDialog implements Addable{
                 }catch(Exception ignored){
                     UIUtils.showInfoToast("@import-patch.failed", 3.0f, 4);
                 }
-            }).disabled(b -> Core.app.getClipboardText().isEmpty());
+            }).disabled(b -> Core.app.getClipboardText() != null && Core.app.getClipboardText().isEmpty());
         }).pad(8f).padTop(4f).growX();
     }
 
