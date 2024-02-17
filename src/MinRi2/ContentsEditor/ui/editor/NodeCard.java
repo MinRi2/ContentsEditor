@@ -30,7 +30,7 @@ public class NodeCard extends Table{
     private Seq<Entry<String, CTNode>> sortedChildren;
 
     private String searchText = "";
-    private final DebounceTask debounceRebuild = new DebounceTask(0.5f, this::rebuildNodesTable);
+    private final DebounceTask debounceRebuild = new DebounceTask(0.3f, this::rebuildNodesTable);
 
     public NodeCard(){
         cardCont = new Table();
@@ -89,6 +89,7 @@ public class NodeCard extends Table{
         cardCont.defaults().padLeft(16f);
 
         if(working){
+            childCard.rebuildCont();
             cardCont.add(childCard).grow();
         }else{
             cardCont.table(this::setupSearchTable).pad(8f).growX();
@@ -217,10 +218,14 @@ public class NodeCard extends Table{
                     nodeData.clearData();
 
                     getFrontCard().rebuildNodesTable();
+                }).with(b -> {
+                    ElementUtils.addTooltip(b, "@node-card.clear-data", true);
                 });
 
                 if(parent != null){
-                    buttonTable.button(Icon.cancel, Styles.clearNonei, this::extractWorking);
+                    buttonTable.button(Icon.cancel, Styles.clearNonei, this::extractWorking).with(b -> {
+                        ElementUtils.addTooltip(b, "@node-card.extract", true);
+                    });
                 }
             }).growY();
         });

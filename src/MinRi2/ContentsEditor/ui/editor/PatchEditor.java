@@ -44,6 +44,7 @@ public class PatchEditor extends BaseDialog{
 
         rootData.clearData();
         rootData.jsonData = editPatch.getJsonData();
+        rootData.readData();
 
         show();
     }

@@ -84,15 +84,26 @@ public class NodeData{
     }
 
     public void clearData(){
+        node.collectAll();
         for(Entry<String, NodeData> entry : children){
             NodeData childNodeData = entry.value;
 
             childNodeData.clearData();
         }
 
-        if(parentData != null){
+        if(parentData != null && jsonData != null){
             jsonData = null;
-            parentData.removeData(nodeName);
+        }
+    }
+
+    public void readData(){
+        for(JsonValue childData : jsonData){
+            String childName = childData.name;
+
+            NodeData nodeData = getChild(childName);
+            nodeData.jsonData = childData;
+
+            nodeData.readData();
         }
     }
 

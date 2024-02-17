@@ -105,7 +105,7 @@ public class PatchManager extends BaseDialog implements Addable{
             patchSeq.add(patch);
         }
 
-        Log.info("Read patches: @", patchSeq.toString(";", p -> p.name));
+//        Log.info("Read patches: @", patchSeq.toString(";", p -> p.name));
     }
 
     private void savePatch(StringMap tags){
@@ -116,7 +116,9 @@ public class PatchManager extends BaseDialog implements Addable{
             tags.put(patchSuffix + patch.name, patch.json);
         }
 
-        Log.info("Save patches: @", patchSeq.toString(";", p -> p.name));
+        patchPool.freeAll(patchSeq);
+        patchSeq.clear();
+//        Log.info("Save patches: @", contentsPatch);
     }
 
     private void rebuildCont(){
@@ -139,7 +141,7 @@ public class PatchManager extends BaseDialog implements Addable{
 
             buttonTable.button("@add-patch", Icon.add, Styles.cleart, () -> {
                 String name = findPatchName();
-                Patch patch = new Patch().set(name, "{}");
+                Patch patch = patchPool.obtain().set(name, "{}");
 
                 patchSeq.add(patch);
                 rebuildPatchTable();
@@ -152,7 +154,7 @@ public class PatchManager extends BaseDialog implements Addable{
                     new JsonReader().parse(text);
 
                     String name = findPatchName();
-                    Patch patch = new Patch().set(name, text);
+                    Patch patch = patchPool.obtain().set(name, text);
 
                     patchSeq.add(patch);
                     rebuildPatchTable();

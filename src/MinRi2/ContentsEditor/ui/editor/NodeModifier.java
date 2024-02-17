@@ -14,8 +14,12 @@ import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
+import mindustry.*;
+import mindustry.ctype.*;
 import mindustry.gen.*;
+import mindustry.type.*;
 import mindustry.ui.*;
+import mindustry.world.*;
 
 /**
  * @author minri2
@@ -118,11 +122,17 @@ public class NodeModifier extends Table{
             addResetButton(table, consumer, () -> setColor.get(consumer.getData()));
         };
 
+        ModifierBuilder<UnlockableContent> contentBuilder = (table, consumer) -> {
+            
+        };
+
         static void addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
             table.button(Icon.undo, Styles.clearNonei, () -> {
                 consumer.removeData();
                 clicked.run();
-            }).width(32f).pad(4f).growY().expandX().right();
+            }).width(32f).pad(4f).growY().expandX().right().with(b -> {
+                ElementUtils.addTooltip(b, "@node-modifier.undo", true);
+            });
         }
 
         /**
@@ -137,10 +147,15 @@ public class NodeModifier extends Table{
         static{
             modifyConfig.addAll(
             new ModifierConfig("=", StringModifier::new, String.class),
+
             new ModifierConfig("=", NumberModifier::new,
             Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class,
             byte.class, short.class, int.class, long.class, float.class, double.class),
-            new ModifierConfig("=", BooleanModifier::new, Boolean.class, boolean.class)
+
+            new ModifierConfig("=", BooleanModifier::new, Boolean.class, boolean.class),
+
+            new ModifierConfig("=", ContentTypeModifier::new,
+            Block.class, Item.class, Liquid.class, StatusEffect.class, UnitType.class)
             );
         }
 
@@ -368,5 +383,40 @@ public class NodeModifier extends Table{
         public Boolean parse(Object object){
             return (Boolean)object;
         }
+    }
+
+    public static class ContentTypeModifier extends BaseModifier<UnlockableContent>{
+        private static ObjectMap<Class<?>, ContentType> contentClassTypeMap = ObjectMap.of(
+        Block.class, ContentType.block,
+        Item.class, ContentType.item,
+        Liquid.class, ContentType.liquid,
+        StatusEffect.class, ContentType.status,
+        UnitType.class, ContentType.unit
+        );
+
+        private final ContentType contentType;
+
+        protected ContentTypeModifier(NodeData nodeData){
+            super(nodeData);
+
+            Class<?> type = nodeData.getObjInfo().getType();
+            contentType = contentClassTypeMap.get(type);
+        }
+
+        @Override
+        protected void setDataJson(JsonValue jsonData, UnlockableContent value){
+            jsonData.set(value.name);
+        }
+
+        @Override
+        protected UnlockableContent getDataJson(JsonValue jsonData){
+            return Vars.content.getByName(contentType, jsonData.asString());
+        }
+
+        @Override
+        public UnlockableContent parse(Object object){
+            return (UnlockableContent)object;
+        }
+
     }
 }
