@@ -19,7 +19,7 @@ java{
 ext{
     //the build number that this mod is made for
     mindustryVersion = 'v146'
-    minModCoreVersion = "local"
+    minModCoreVersion = "774565478f"
     jabelVersion = "93fde537c7"
     //windows sucks
     isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
@@ -41,14 +41,14 @@ dependencies{
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
     compileOnly files("libs/ContentsTweaker-3.0.3.jar")
-    compileOnly "com.github.MinRi2.MinModCore:core:$minModCoreVersion"
+    implementation "com.github.MinRi2.MinModCore:$minModCoreVersion"
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
 
 //force arc version
 configurations.all{
-    resolutionStrategy.eachDependency { details ->
+    resolutionStrategy.eachDependency{ details ->
         if(details.requested.group == 'com.github.Anuken.Arc'){
             details.useVersion "$mindustryVersion"
         }
@@ -61,7 +61,7 @@ task jarAndroid{
     doLast{
         if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.");
 
-        def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists()}
+        def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists() }
 
         if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
 
@@ -72,7 +72,7 @@ task jarAndroid{
 
         //dex and desugar files - this requires d8 in your PATH
         "$d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
-            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+                .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
     }
 }
 
