@@ -41,7 +41,7 @@ dependencies{
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
     compileOnly files("libs/ContentsTweaker-3.0.3.jar")
-    implementation "com.github.MinRi2.MinModCore:$minModCoreVersion"
+    implementation "com.github.MinRi2:MinModCore:$minModCoreVersion"
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
