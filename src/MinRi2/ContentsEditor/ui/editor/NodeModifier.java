@@ -141,7 +141,7 @@ public class NodeModifier extends Table{
             defaultValue = nodeData.getObjInfo().getObj();
             jsonDataProv = () -> nodeData.jsonData == null ? null : nodeData.jsonData.get(modifierName);
             typeChecker = string -> config.checkTypeValid(string, type);
-            consumer = string -> nodeData.setData(config.getModifierName(), string);
+            consumer = string -> nodeData.setStringData(config.getModifierName(), string);
 
             return this;
         }

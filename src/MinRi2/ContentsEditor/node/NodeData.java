@@ -3,7 +3,6 @@ package MinRi2.ContentsEditor.node;
 import arc.struct.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
-import arc.util.serialization.JsonWriter.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
 import org.jetbrains.annotations.*;
@@ -17,14 +16,13 @@ public class NodeData{
 
     public final CTNode node;
     public final String nodeName;
-    /** Init when {@link #setData(String, String)} */
+    /** Init when {@link #setStringData(String, String)} */
     public JsonValue jsonData;
 
     protected ObjectMap<String, NodeData> children = new ObjectMap<>();
 
-    /** Only for removing. Null when {@link #node} is Root */
-    @Nullable
-    protected NodeData parentData;
+    /** Null when {@link #node} is Root */
+    protected @Nullable NodeData parentData;
 
     private NodeData(String nodeName, CTNode node){
         this.nodeName = nodeName;
@@ -40,16 +38,14 @@ public class NodeData{
     }
 
     public void initJsonData(){
-        if(jsonData != null){
+        if(jsonData != null || parentData == null){
             return;
         }
 
-        if(parentData != null){
-            parentData.initJsonData();
-        }
+        parentData.initJsonData();
 
         JsonValue jsonData = new JsonValue(ValueType.object);
-        jsonData.addChild(nodeName, jsonData);
+        parentData.jsonData.addChild(nodeName, jsonData);
 
         this.jsonData = jsonData;
     }
@@ -74,7 +70,7 @@ public class NodeData{
         this.parentData = parentData;
     }
 
-    public void setData(String name, String value){
+    public void setStringData(String name, String value){
         initJsonData();
 
         JsonValue data = jsonData.get(name);
@@ -90,7 +86,7 @@ public class NodeData{
         jsonData.remove(name);
 
         // This jsonData is empty after removing. Remove jsonData from parent.
-        if(jsonData.child == null && parentData != null){
+        if(jsonData.size == 0 && parentData != null){
             parentData.removeData(nodeName);
         }
     }
@@ -109,6 +105,6 @@ public class NodeData{
 
     @Override
     public String toString(){
-        return nodeName + ": " + jsonData.toJson(OutputType.json);
+        return nodeName + ": ";// + jsonData.toJson(OutputType.json);
     }
 }

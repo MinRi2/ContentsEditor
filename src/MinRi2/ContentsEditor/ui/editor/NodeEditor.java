@@ -4,6 +4,7 @@ import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ModCore.ui.*;
 import arc.util.*;
+import arc.util.serialization.JsonWriter.*;
 import mindustry.ui.dialogs.*;
 
 /**
@@ -23,7 +24,7 @@ public class NodeEditor extends BaseDialog{
         resized(this::rebuild);
         shown(this::rebuild);
         hidden(() -> {
-            Log.info("EDIT END: @", NodeData.getRootData());
+            Log.info("EDIT END: @", NodeData.getRootData().jsonData.toJson(OutputType.json));
         });
     }
 
