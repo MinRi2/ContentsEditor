@@ -74,7 +74,7 @@ public interface ModifierBuilder<T>{
                 }
 
                 b.image(icon).scaling(Scaling.fit).size(40f).pad(8f).expandX().left();
-                b.add(displayName).expandX();
+                b.add(displayName).pad(4f).ellipsis(true).width(64f);
             };
 
             setValue[0].get(consumer.getData());

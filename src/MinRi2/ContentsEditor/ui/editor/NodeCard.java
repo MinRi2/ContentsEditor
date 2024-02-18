@@ -23,10 +23,12 @@ import java.util.Map.*;
  * Create by 2024/2/16
  */
 public class NodeCard extends Table{
+    public static float buttonWidth = 300f;
+    public static float buttonHeight = buttonWidth / 4f;
+
     private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
     public boolean isChild, working;
     public NodeCard parent, childCard;
-
     private NodeData nodeData;
     private Seq<Entry<String, CTNode>> sortedChildren;
 
@@ -97,7 +99,7 @@ public class NodeCard extends Table{
 
             cardCont.row();
 
-            cardCont.pane(Styles.noBarPane, nodesTable).fill();
+            cardCont.add(nodesTable).fill();
 
             // 下一帧再重构
             Core.app.post(this::rebuildNodesTable);
@@ -131,8 +133,7 @@ public class NodeCard extends Table{
             return;
         }
 
-        float buttonWidth = 250f;
-        int columns = Math.max(1, (int)(nodesTable.getWidth() / buttonWidth));
+        int columns = Math.max(1, (int)(nodesTable.getWidth() / Scl.scl() / buttonWidth));
 
         nodesTable.defaults().size(buttonWidth, buttonWidth / 4).pad(4f).margin(8f).top().left();
 
@@ -209,7 +210,7 @@ public class NodeCard extends Table{
                 nameTable.row();
                 Cell<?> horizontalLine = nameTable.image().height(4f).color(Color.darkGray).growX();
                 horizontalLine.colspan(nameTable.getColumns());
-            }).pad(8f).expandX().left();
+            }).size(buttonWidth, buttonHeight).pad(8f).expandX().left();
 
             nodeTitle.table(Styles.black3, buttonTable -> {
                 buttonTable.defaults().width(64f).growY();

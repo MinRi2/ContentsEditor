@@ -6,6 +6,7 @@ import MinRi2.ContentsEditor.ui.editor.PatchManager.*;
 import MinRi2.ModCore.ui.*;
 import arc.input.*;
 import arc.util.serialization.JsonWriter.*;
+import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
 
 /**
@@ -63,8 +64,8 @@ public class PatchEditor extends BaseDialog{
 
     protected void rebuild(){
         cont.clearChildren();
-
+        
         card.rebuild();
-        cont.add(card).pad(16f).padTop(8f).grow();
+        cont.pane(Styles.noBarPane, card).scrollX(false).pad(16f).padTop(8f).grow();
     }
 }
