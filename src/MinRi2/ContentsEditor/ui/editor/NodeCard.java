@@ -131,8 +131,8 @@ public class NodeCard extends Table{
             return;
         }
 
-        float buttonWidth = 300f / Scl.scl();
-        int columns = Math.max(1, (int)(nodesTable.getWidth() / Scl.scl() / buttonWidth));
+        float buttonWidth = 250f;
+        int columns = Math.max(1, (int)(nodesTable.getWidth() / buttonWidth));
 
         nodesTable.defaults().size(buttonWidth, buttonWidth / 4).pad(4f).margin(8f).top().left();
 
