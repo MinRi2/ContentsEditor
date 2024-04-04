@@ -7,7 +7,6 @@ sourceSets.main.java.srcDirs = ["src"]
 repositories{
     mavenCentral()
     mavenLocal()
-    maven{ url "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
     maven{ url 'https://www.jitpack.io' }
 }
 
@@ -37,8 +36,11 @@ allprojects{
 }
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    compileOnly "com.github.anuken.arc:arc-core:$mindustryVersion"
+    compileOnly "com.github.anuken.arc:flabel:$mindustryVersion"
+    compileOnly("com.github.anuken.mindustry:core:$mindustryVersion"){
+        exclude group: 'com.github.Anuken.Arc', module: 'flabel'
+    }
 
     compileOnly files("libs/ContentsTweaker-3.0.3.jar")
     implementation "com.github.MinRi2:MinModCore:$minModCoreVersion"

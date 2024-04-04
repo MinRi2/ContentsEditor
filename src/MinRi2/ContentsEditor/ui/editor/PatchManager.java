@@ -173,7 +173,8 @@ public class PatchManager extends BaseDialog implements Addable{
         int index = 0;
         for(Patch patch : patchSeq){
             patchTable.table(MinTex.whiteuiRegion, t -> {
-                t.field(patch.name, text -> patch.name = text).growX();
+                t.field(patch.name, text -> patch.name = text)
+                .valid(text -> !patchSeq.contains(p -> p != patch && p.name.equals(text))).growX();
 
                 t.table(buttons -> {
                     buttons.defaults().size(32f).pad(4f);

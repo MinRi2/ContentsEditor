@@ -1,4 +1,4 @@
-package MinRi2.ContentsEditor.ui.editor.modifier;
+package MinRi2.ContentsEditor.node.modifier;
 
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
@@ -22,24 +22,8 @@ import mindustry.world.*;
  * @author minri2
  * Create by 2024/2/16
  */
-public class NodeModifier extends Table{
-    private final NodeData nodeData;
-
-    private final BaseModifier<?> modifier;
-
-    public NodeModifier(NodeData nodeData){
-        this.nodeData = nodeData;
-        this.modifier = getModifier(nodeData);
-
-        setup();
-
-        background(MinTex.whiteuiRegion);
-        setColor(modifier.modified() ? EPalettes.modified : EPalettes.unmodified);
-
-        modifier.onModified(modified -> {
-            Color color = modified ? EPalettes.modified : EPalettes.unmodified;
-            addAction(Actions.color(color, 0.5f));
-        });
+public class NodeModifier{
+    private NodeModifier(){
     }
 
     public static boolean modifiable(CTNode node){
@@ -50,18 +34,28 @@ public class NodeModifier extends Table{
         return BaseModifier.getModifier(nodeData);
     }
 
-    public void setup(){
-        table(infoTable -> {
+    public static void setupModifierTable(Table table, NodeData nodeData){
+        BaseModifier<?> modifier = getModifier(nodeData);
+
+        table.table(infoTable -> {
             // Add node info
             NodeDisplay.displayNameType(infoTable, nodeData);
         }).fill();
 
-        table(modifier::build).pad(4).grow();
+        table.table(modifier::build).pad(4).grow();
 
-        image().width(4f).color(Color.darkGray).growY().right();
-        row();
-        Cell<?> horizontalLine = image().height(4f).color(Color.darkGray).growX();
-        horizontalLine.colspan(getColumns());
+        table.image().width(4f).color(Color.darkGray).growY().right();
+        table.row();
+        Cell<?> horizontalLine = table.image().height(4f).color(Color.darkGray).growX();
+        horizontalLine.colspan(table.getColumns());
+
+        table.background(MinTex.whiteuiRegion);
+        table.setColor(modifier.modified() ? EPalettes.modified : EPalettes.unmodified);
+
+        modifier.onModified(modified -> {
+            Color color = modified ? EPalettes.modified : EPalettes.unmodified;
+            table.addAction(Actions.color(color, 0.5f));
+        });
     }
 
     public abstract static class BaseModifier<T> implements ModifyConsumer<T>{
@@ -110,12 +104,6 @@ public class NodeModifier extends Table{
         }
 
         public static BaseModifier<?> getModifier(NodeData nodeData){
-            ObjInfo<?> objInfo = nodeData.getObjInfo();
-
-            if(objInfo == null){
-                return null;
-            }
-
             CTNode node = nodeData.node;
             for(ModifierConfig config : modifyConfig){
                 if(config.canModify(node)){

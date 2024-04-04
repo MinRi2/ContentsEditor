@@ -1,4 +1,4 @@
-package MinRi2.ContentsEditor.ui.editor.modifier;
+package MinRi2.ContentsEditor.node.modifier;
 
 public interface ModifyConsumer<T>{
     /**

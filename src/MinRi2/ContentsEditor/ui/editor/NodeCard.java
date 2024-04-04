@@ -1,8 +1,8 @@
 package MinRi2.ContentsEditor.ui.editor;
 
 import MinRi2.ContentsEditor.node.*;
+import MinRi2.ContentsEditor.node.modifier.*;
 import MinRi2.ContentsEditor.ui.*;
-import MinRi2.ContentsEditor.ui.editor.modifier.*;
 import MinRi2.ModCore.ui.*;
 import MinRi2.ModCore.utils.*;
 import arc.*;
@@ -163,7 +163,7 @@ public class NodeCard extends Table{
     private void addEditTable(Table table, String childNodeName){
         NodeData childNodeData = nodeData.getChild(childNodeName);
 
-        table.add(new NodeModifier(childNodeData));
+        table.table(t -> NodeModifier.setupModifierTable(t, childNodeData));
     }
 
     private void addChildButton(Table table, CTNode childNode, String childNodeName){
