@@ -38,13 +38,15 @@ public class PatchEditor extends BaseDialog{
         keyDown(KeyCode.up, () -> {
             card.getFrontCard().extractWorking();
         });
+
+        addCloseListener();
     }
 
     public void edit(Patch patch){
         editPatch = patch;
 
         rootData.clearData();
-        rootData.jsonData = editPatch.getJsonData();
+        rootData.jsonData = editPatch.getJsonValue();
         rootData.readData();
 
         show();
@@ -64,7 +66,7 @@ public class PatchEditor extends BaseDialog{
 
     protected void rebuild(){
         cont.clearChildren();
-        
+
         card.rebuild();
         cont.pane(Styles.noBarPane, card).scrollX(false).pad(16f).padTop(8f).grow();
     }

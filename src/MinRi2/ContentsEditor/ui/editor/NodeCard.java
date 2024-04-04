@@ -244,7 +244,13 @@ public class NodeCard extends Table{
             CTNode n1 = e1.getValue();
             CTNode n2 = e2.getValue();
 
-            return Boolean.compare(!NodeModifier.modifiable(n1), !NodeModifier.modifiable(n2));
+            int modifiable = Boolean.compare(!NodeModifier.modifiable(n1), !NodeModifier.modifiable(n2));
+            if(modifiable != 0) return modifiable;
+
+            String name1 = e1.getKey();
+            String name2 = e2.getKey();
+
+            return Boolean.compare(!nodeData.hasData(name1), !nodeData.hasData(name2));
         });
 
         return sortedChildren;

@@ -44,6 +44,7 @@ public class NodeData{
 
         parentData.initJsonData();
 
+        // 都是对象
         JsonValue jsonData = new JsonValue(ValueType.object);
         parentData.jsonData.addChild(nodeName, jsonData);
 
@@ -75,12 +76,18 @@ public class NodeData{
 
         JsonValue data = jsonData.get(name);
 
-        if(data == null){
-            data = new JsonValue(valueType);
-            jsonData.addChild(name, data);
+        if(data != null){
+            return data;
         }
 
-        return data;
+        // 对象，数组特殊类型需要创建JsonValue
+        if(valueType == ValueType.object || valueType == ValueType.array){
+            data = new JsonValue(valueType);
+            jsonData.addChild(name, data);
+            return data;
+        }else{
+            return jsonData;
+        }
     }
 
     public void clearData(){
@@ -116,6 +123,13 @@ public class NodeData{
 
         // 删除子数据后 该jsonData就没有子数据了 清除掉
         if(jsonData.child == null && parentData != null){
+            parentData.removeData(nodeName);
+            jsonData = null;
+        }
+    }
+
+    public void remove(){
+        if(parentData != null){
             parentData.removeData(nodeName);
             jsonData = null;
         }

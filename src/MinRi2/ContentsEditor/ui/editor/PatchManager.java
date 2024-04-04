@@ -12,6 +12,7 @@ import arc.util.*;
 import arc.util.pooling.*;
 import arc.util.pooling.Pool.*;
 import arc.util.serialization.*;
+import arc.util.serialization.JsonWriter.*;
 import mindustry.*;
 import mindustry.editor.*;
 import mindustry.gen.*;
@@ -23,12 +24,16 @@ import mindustry.ui.dialogs.*;
  * Create by 2024/2/17
  */
 public class PatchManager extends BaseDialog implements Addable{
+    private static final JsonReader reader = new JsonReader();
+
     private static final Pool<Patch> patchPool = Pools.get(Patch.class, Patch::new);
     public static String contentsPatchTag = "ContentsPatch", patchSuffix = "CT@";
 
     private final PatchEditor editor;
     private final Table patchContainer, patchTable;
     private final Seq<Patch> patchSeq = new Seq<>();
+
+    private StringMap tags;
 
     public PatchManager(){
         super("");
@@ -42,13 +47,20 @@ public class PatchManager extends BaseDialog implements Addable{
 
         resized(this::rebuildCont);
         shown(() -> {
-            readPatch(Vars.editor.tags);
+            tags = Vars.editor.tags;
+
+            readPatch();
             rebuildCont();
         });
+
         hidden(() -> {
-            savePatch(Vars.editor.tags);
-//            Vars.ui.editor.save();
+            savePatch();
+
+            patchPool.freeAll(patchSeq);
+            patchSeq.clear();
         });
+
+        editor.hidden(this::savePatch);
     }
 
     @Override
@@ -85,7 +97,7 @@ public class PatchManager extends BaseDialog implements Addable{
         addCloseButton();
     }
 
-    private void readPatch(StringMap tags){
+    private void readPatch(){
         String contentsPatch = tags.get(contentsPatchTag);
 
         if(contentsPatch == null){
@@ -108,16 +120,13 @@ public class PatchManager extends BaseDialog implements Addable{
 //        Log.info("Read patches: @", patchSeq.toString(";", p -> p.name));
     }
 
-    private void savePatch(StringMap tags){
+    private void savePatch(){
         String contentsPatch = patchSeq.toString(";", p -> p.name);
 
         tags.put(contentsPatchTag, contentsPatch);
         for(Patch patch : patchSeq){
             tags.put(patchSuffix + patch.name, patch.json);
         }
-
-        patchPool.freeAll(patchSeq);
-        patchSeq.clear();
 //        Log.info("Save patches: @", contentsPatch);
     }
 
@@ -137,7 +146,7 @@ public class PatchManager extends BaseDialog implements Addable{
         table.row();
 
         table.table(Styles.grayPanel, buttonTable -> {
-            buttonTable.defaults().minWidth(130f).height(40f).growX();
+            buttonTable.defaults().minWidth(130f).height(40f).margin(8f).growX();
 
             buttonTable.button("@add-patch", Icon.add, Styles.cleart, () -> {
                 String name = findPatchName();
@@ -145,19 +154,23 @@ public class PatchManager extends BaseDialog implements Addable{
 
                 patchSeq.add(patch);
                 rebuildPatchTable();
+
+                savePatch();
             });
 
             buttonTable.button("@import-patch", Icon.add, Styles.cleart, () -> {
                 String text = Core.app.getClipboardText();
 
                 try{
-                    new JsonReader().parse(text);
+                    reader.parse(text);
 
                     String name = findPatchName();
                     Patch patch = patchPool.obtain().set(name, text);
 
                     patchSeq.add(patch);
                     rebuildPatchTable();
+
+                    savePatch();
 
                     UIUtils.showInfoToast("@import-patch.succeed", 3.0f, 4);
                 }catch(Exception ignored){
@@ -180,14 +193,17 @@ public class PatchManager extends BaseDialog implements Addable{
                     buttons.defaults().size(32f).pad(4f);
 
                     buttons.button(Icon.cancelSmall, Styles.clearNonei, () -> {
+                        patchPool.free(patch);
                         patchSeq.remove(patch);
+
+                        savePatch();
                         rebuildPatchTable();
                     }).with(b -> {
                         ElementUtils.addTooltip(b, "@patch.remove", true);
                     });
 
                     buttons.button(Icon.copySmall, Styles.clearNonei, () -> {
-                        Core.app.setClipboardText(patch.json);
+                        Core.app.setClipboardText(patch.getFormattedJson());
                         UIUtils.showInfoToast("[green]Copy: []" + patch.name, 3.0f, 4);
                     }).with(b -> {
                         ElementUtils.addTooltip(b, "@patch.copy", true);
@@ -238,8 +254,12 @@ public class PatchManager extends BaseDialog implements Addable{
             json = null;
         }
 
-        public JsonValue getJsonData(){
-            return new JsonReader().parse(json);
+        public JsonValue getJsonValue(){
+            return reader.parse(json);
+        }
+
+        public String getFormattedJson(){
+            return getJsonValue().prettyPrint(OutputType.json, 0);
         }
     }
 }

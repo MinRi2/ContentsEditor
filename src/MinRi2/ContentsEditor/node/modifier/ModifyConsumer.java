@@ -1,6 +1,8 @@
 package MinRi2.ContentsEditor.node.modifier;
 
 public interface ModifyConsumer<T>{
+    boolean modified();
+
     /**
      * 获取数据的类型
      */
@@ -20,7 +22,7 @@ public interface ModifyConsumer<T>{
     /**
      * 保存数据
      */
-    void saveData(T value);
+    void modify(T value);
 
-    void removeData();
+    void reset();
 }
