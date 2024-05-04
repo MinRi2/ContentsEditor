@@ -20,7 +20,7 @@ public interface ModifierBuilder<T>{
         // lambda????
         final String[] value = {consumer.getData()};
 
-        TextField field = table.field(value[0], consumer::modify)
+        TextField field = table.field(value[0], consumer::onModify)
         .valid(consumer::checkValue).pad(4f).width(100f).get();
 
         addResetButton(table, consumer, () -> {
@@ -46,7 +46,7 @@ public interface ModifierBuilder<T>{
             b.label(() -> value[0] ? "[green]true" : "[red]false").expandX();
         }, Styles.clearNonei, () -> {
             setColor.get(!value[0]);
-            consumer.modify(value[0]);
+            consumer.onModify(value[0]);
         }).grow();
 
         addResetButton(table, consumer, () -> setColor.get(consumer.getData()));
@@ -84,7 +84,7 @@ public interface ModifierBuilder<T>{
 
             EUI.selector.select(contentType, c -> c != value[0], c -> {
                 setValue[0].get(c);
-                consumer.modify(value[0]);
+                consumer.onModify(value[0]);
                 return true;
             });
         }).grow();
@@ -94,9 +94,9 @@ public interface ModifierBuilder<T>{
 
     static void addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
         table.button(Icon.undo, Styles.clearNonei, () -> {
-            consumer.reset();
+            consumer.resetModify();
             clicked.run();
-        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::modified).with(b -> {
+        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).with(b -> {
             ElementUtils.addTooltip(b, "@node-modifier.undo", true);
         });
     }

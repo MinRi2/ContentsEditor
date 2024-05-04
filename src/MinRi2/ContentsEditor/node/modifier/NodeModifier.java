@@ -38,7 +38,7 @@ public class NodeModifier{
         horizontalLine.colspan(table.getColumns());
 
         table.background(MinTex.whiteuiRegion);
-        table.setColor(modifier.modified() ? EPalettes.modified : EPalettes.unmodified);
+        table.setColor(modifier.isModified() ? EPalettes.modified : EPalettes.unmodified);
 
         modifier.onModified(modified -> {
             Color color = modified ? EPalettes.modified : EPalettes.unmodified;

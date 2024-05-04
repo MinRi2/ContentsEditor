@@ -2,11 +2,12 @@ package MinRi2.ContentsEditor.node;
 
 import arc.struct.*;
 import arc.struct.ObjectMap.*;
+import arc.util.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author minri2
@@ -53,25 +54,35 @@ public class NodeData{
 
     public NodeData getChild(String childName){
         node.collectAll();
+
         CTNode child = node.getChildren().get(childName);
 
-        if(child == null){
-            return null;
+        if(child != null){
+            return children.get(childName, () -> {
+                NodeData nodeData = new NodeData(childName, child);
+                nodeData.setParent(this);
+
+                return nodeData;
+            });
         }
 
-        return children.get(childName, () -> {
-            NodeData nodeData = new NodeData(childName, child);
-            nodeData.setParent(this);
+        if(!childName.startsWith("#")){
+            ObjInfo<?> objInfo = getObjInfo();
+            if(objInfo != null && objInfo.getElementType() != null){
+                return getChild("#" + childName);
+            }
+        }
 
-            return nodeData;
-        });
+        Log.warn("'@' don't have child '@'", nodeName, childName);
+
+        return null;
     }
 
     public void setParent(NodeData parentData){
         this.parentData = parentData;
     }
 
-    public JsonValue getData(String name, ValueType valueType){
+    public JsonValue getJson(String name, ValueType valueType){
         initJsonData();
 
         JsonValue data = jsonData.get(name);
@@ -90,32 +101,55 @@ public class NodeData{
         }
     }
 
-    public void clearData(){
-        node.collectAll();
-        for(Entry<String, NodeData> entry : children){
-            NodeData childNodeData = entry.value;
-
-            childNodeData.clearData();
-        }
-
-        if(parentData != null && jsonData != null){
-            jsonData = null;
-        }
-    }
-
-    public void readData(){
+    public void readJson(){
         for(JsonValue childData : jsonData){
-            String childName = childData.name;
+            String jsonName = childData.name;
 
-            NodeData nodeData = getChild(childName);
+            if(jsonName.contains(".")){
+                String[] names = jsonName.split("\\.");
+
+                readDotJson(names, childData);
+
+                continue;
+            }
+
+            NodeData nodeData = getChild(jsonName);
+
+            if(nodeData == null){
+                Log.warn("'@' don't have child '@'", getObjInfo().getObj(), jsonName);
+                continue;
+            }
+
             nodeData.jsonData = childData;
-
-            nodeData.readData();
+            nodeData.readJson();
         }
     }
 
-    public void removeData(String name){
-        if(!hasData(name)){
+    private void readDotJson(String[] names, JsonValue childData){
+        NodeData currentData = this;
+        JsonValue currentJsonValue = jsonData;
+
+        for(int i = 0, len = names.length; i < len; i++){
+            String name = names[i];
+            NodeData nodeData = currentData.getChild(name);
+
+            if(nodeData == null){
+                Log.warn("'@' don't have child '@'", currentData.getObjInfo().getObj(), name);
+                continue;
+            }
+
+            // TODO: StackOverflow
+            JsonValue childJsonValue = i != len - 1 ? new JsonValue(ValueType.object) : childData;
+            currentJsonValue.addChild(name, childJsonValue);
+            nodeData.jsonData = childJsonValue;
+
+            currentData = nodeData;
+            currentJsonValue = childJsonValue;
+        }
+    }
+
+    public void removeJson(String name){
+        if(!hasJsonChild(name)){
             return;
         }
 
@@ -123,19 +157,27 @@ public class NodeData{
 
         // 删除子数据后 该jsonData就没有子数据了 清除掉
         if(jsonData.child == null && parentData != null){
-            parentData.removeData(nodeName);
+            parentData.removeJson(nodeName);
             jsonData = null;
         }
     }
 
-    public void remove(){
+    public void clearJson(){
+        for(Entry<String, NodeData> entry : children){
+            NodeData childNodeData = entry.value;
+
+            if(childNodeData.jsonData != null){
+                childNodeData.clearJson();
+            }
+        }
+
         if(parentData != null){
-            parentData.removeData(nodeName);
+            parentData.removeJson(nodeName);
             jsonData = null;
         }
     }
 
-    public boolean hasData(String name){
+    public boolean hasJsonChild(String name){
         return jsonData != null && jsonData.has(name);
     }
 

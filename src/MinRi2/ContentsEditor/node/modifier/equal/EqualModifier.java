@@ -1,8 +1,9 @@
 package MinRi2.ContentsEditor.node.modifier.equal;
 
-import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.node.modifier.*;
+import arc.func.*;
 import arc.util.serialization.*;
+import cf.wayzer.contentsTweaker.*;
 import mindustry.type.*;
 import mindustry.world.*;
 
@@ -11,32 +12,38 @@ import mindustry.world.*;
  * Create by 2024/4/4
  */
 public abstract class EqualModifier<T> extends BaseModifier<T>{
-    protected EqualModifier(NodeData nodeData){
-        super(nodeData);
+    protected EqualModifier(){
     }
 
     public static void init(){
         modifyConfig.addAll(
-        new ModifierConfig("=", StringModifier::new, String.class),
+        new EqualModifierConfig(StringModifier::new, String.class),
 
-        new ModifierConfig("=", NumberModifier::new,
+        new EqualModifierConfig(NumberModifier::new,
         Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class,
         byte.class, short.class, int.class, long.class, float.class, double.class),
 
-        new ModifierConfig("=", BooleanModifier::new, Boolean.class, boolean.class),
+        new EqualModifierConfig(BooleanModifier::new, Boolean.class, boolean.class),
 
-        new ModifierConfig("=", ContentTypeModifier::new,
+        new EqualModifierConfig(ContentTypeModifier::new,
         Block.class, Item.class, Liquid.class, StatusEffect.class, UnitType.class)
         );
     }
 
     @Override
-    protected void resetModify(){
-        nodeData.remove();
+    public JsonValue getJsonValue(){
+        return nodeData.getJson("=", valueType);
     }
 
-    @Override
-    public JsonValue getJsonValue(){
-        return nodeData.getData("=", valueType);
+    public static class EqualModifierConfig extends ModifierConfig{
+
+        public EqualModifierConfig(Prov<BaseModifier<?>> modifierProv, Class<?>... types){
+            super(modifierProv, types);
+        }
+
+        @Override
+        protected boolean canModified(CTNode node){
+            return node.getChildren().containsKey("=");
+        }
     }
 }

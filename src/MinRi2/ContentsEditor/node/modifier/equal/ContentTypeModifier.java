@@ -23,16 +23,18 @@ public class ContentTypeModifier extends EqualModifier<UnlockableContent>{
     UnitType.class, ContentType.unit
     );
 
-    private final ContentType contentType;
+    private ContentType contentType;
 
-    protected ContentTypeModifier(NodeData nodeData){
-        super(nodeData);
-
+    protected ContentTypeModifier(){
         builder = ModifierBuilder.contentBuilder;
         valueType = ValueType.stringValue;
+    }
+
+    @Override
+    public void setNodeData(NodeData data){
+        super.setNodeData(data);
 
         Class<?> type = nodeData.getObjInfo().getType();
-
         contentType = contentClassTypeMap.get(type);
     }
 

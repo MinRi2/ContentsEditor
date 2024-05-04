@@ -4,6 +4,7 @@ import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ContentsEditor.ui.editor.PatchManager.*;
 import MinRi2.ModCore.ui.*;
+import arc.*;
 import arc.input.*;
 import arc.util.serialization.JsonWriter.*;
 import mindustry.ui.*;
@@ -35,9 +36,22 @@ public class PatchEditor extends BaseDialog{
             }
         });
 
-        keyDown(KeyCode.up, () -> {
-            card.getFrontCard().extractWorking();
+        update(() -> {
+            if(Core.scene.getDialog() == this
+            && Core.scene.getKeyboardFocus() != null
+            && !Core.scene.getKeyboardFocus().isDescendantOf(this)){
+                requestKeyboard();
+            }
         });
+
+        keyDown(KeyCode.up, () -> {
+            NodeCard front = card.getFrontCard();
+            if(front != card){
+                front.extractWorking();
+            }
+        });
+
+        keyDown(KeyCode.down, () -> card.getFrontCard().editLastData());
 
         addCloseListener();
     }
@@ -45,9 +59,9 @@ public class PatchEditor extends BaseDialog{
     public void edit(Patch patch){
         editPatch = patch;
 
-        rootData.clearData();
+        rootData.clearJson();
         rootData.jsonData = editPatch.getJsonValue();
-        rootData.readData();
+        rootData.readJson();
 
         show();
     }
@@ -60,7 +74,9 @@ public class PatchEditor extends BaseDialog{
 
         card.setNodeData(rootData);
 
+
         addCloseButton();
+        buttons.button("@node-card.expandLast", () -> card.getFrontCard().editLastData());
         makeButtonOverlay();
     }
 

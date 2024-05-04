@@ -1,15 +1,10 @@
 package MinRi2.ContentsEditor.node.modifier.equal;
 
-import MinRi2.ContentsEditor.node.*;
-
 /**
  * @author minri2
  * Create by 2024/4/4
  */
 public class NumberModifier extends StringModifier{
-    public NumberModifier(NodeData nodeData){
-        super(nodeData);
-    }
 
     @Override
     public boolean checkTypeValid(String string, Class<?> type){

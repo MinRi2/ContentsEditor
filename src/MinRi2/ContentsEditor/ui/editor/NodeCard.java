@@ -23,14 +23,16 @@ import java.util.Map.*;
  * Create by 2024/2/16
  */
 public class NodeCard extends Table{
-    public static float buttonWidth = 300f;
+    public static float buttonWidth = 320f;
     public static float buttonHeight = buttonWidth / 4f;
 
     private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
-    public boolean isChild, working;
+    public boolean isChild, editing;
     public NodeCard parent, childCard;
     private NodeData nodeData;
     private Seq<Entry<String, CTNode>> sortedChildren;
+
+    private NodeData lastChildData;
 
     private String searchText = "";
     private final DebounceTask debounceRebuild = new DebounceTask(0.3f, this::rebuildNodesTable);
@@ -56,16 +58,40 @@ public class NodeCard extends Table{
     public NodeCard getFrontCard(){
         NodeCard card = this;
 
-        while((card.parent == null || card.working) && card.childCard != null){
+        while(card.editing && card.childCard != null){
             card = card.childCard;
         }
 
         return card;
     }
 
+    private void editChildNode(NodeData childNodeData){
+        if(childCard == null){
+            childCard = new NodeCard();
+            childCard.setParent(this);
+        }else if(childCard.editing){
+            childCard.editChildNode(null);
+        }
+
+        editing = childNodeData != null;
+
+        childCard.setNodeData(childNodeData);
+        childCard.rebuild();
+
+        rebuild();
+    }
+
     public void extractWorking(){
         if(parent != null){
+            parent.lastChildData = nodeData;
             parent.editChildNode(null);
+        }
+    }
+
+    public void editLastData(){
+        // 仅支持最前面的卡片
+        if((childCard == null || !childCard.editing) && lastChildData != null){
+            editChildNode(lastChildData);
         }
     }
 
@@ -91,7 +117,7 @@ public class NodeCard extends Table{
 
         cardCont.defaults().padLeft(16f);
 
-        if(working){
+        if(editing){
             childCard.rebuildCont();
             cardCont.add(childCard).grow();
         }else{
@@ -167,7 +193,7 @@ public class NodeCard extends Table{
     }
 
     private void addChildButton(Table table, CTNode childNode, String childNodeName){
-        ImageButtonStyle style = nodeData.hasData(childNodeName) ? EStyles.cardModifiedButtoni : EStyles.cardButtoni;
+        ImageButtonStyle style = nodeData.hasJsonChild(childNodeName) ? EStyles.cardModifiedButtoni : EStyles.cardButtoni;
 
         table.button(b -> {
             NodeDisplay.display(b, childNode, childNodeName);
@@ -182,22 +208,6 @@ public class NodeCard extends Table{
 
             rebuildCont();
         });
-    }
-
-    private void editChildNode(NodeData childNodeData){
-        if(childCard == null){
-            childCard = new NodeCard();
-            childCard.setParent(this);
-        }else if(childCard.working){
-            childCard.editChildNode(null);
-        }
-
-        working = childNodeData != null;
-
-        childCard.setNodeData(childNodeData);
-        childCard.rebuild();
-
-        rebuild();
     }
 
     private void buildTitle(Table table){
@@ -217,7 +227,7 @@ public class NodeCard extends Table{
 
                 // Clear data
                 buttonTable.button(Icon.refresh, Styles.clearNonei, () -> {
-                    nodeData.clearData();
+                    nodeData.clearJson();
 
                     getFrontCard().rebuildNodesTable();
                 }).with(b -> {
@@ -226,7 +236,7 @@ public class NodeCard extends Table{
 
                 if(parent != null){
                     buttonTable.button(Icon.cancel, Styles.clearNonei, this::extractWorking).with(b -> {
-                        ElementUtils.addTooltip(b, "@node-card.extract", true);
+                        ElementUtils.addTooltip(b, "@node-card.extract", false);
                     });
                 }
             }).growY();
@@ -250,9 +260,16 @@ public class NodeCard extends Table{
             String name1 = e1.getKey();
             String name2 = e2.getKey();
 
-            return Boolean.compare(!nodeData.hasData(name1), !nodeData.hasData(name2));
+            return Boolean.compare(!nodeData.hasJsonChild(name1), !nodeData.hasJsonChild(name2));
         });
 
         return sortedChildren;
+    }
+
+    @Override
+    public String toString(){
+        return "NodeCard{" +
+        "nodeData=" + nodeData +
+        '}';
     }
 }

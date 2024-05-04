@@ -1,6 +1,5 @@
 package MinRi2.ContentsEditor.node.modifier.equal;
 
-import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.node.modifier.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
@@ -10,9 +9,7 @@ import arc.util.serialization.JsonValue.*;
  * Create by 2024/4/4
  */
 public class BooleanModifier extends EqualModifier<Boolean>{
-    protected BooleanModifier(NodeData nodeData){
-        super(nodeData);
-
+    protected BooleanModifier(){
         builder = ModifierBuilder.booleanBuilder;
         valueType = ValueType.booleanValue;
     }
