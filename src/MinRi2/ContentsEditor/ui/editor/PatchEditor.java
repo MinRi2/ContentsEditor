@@ -7,6 +7,8 @@ import MinRi2.ModCore.ui.*;
 import arc.*;
 import arc.input.*;
 import arc.util.serialization.JsonWriter.*;
+import mindustry.*;
+import mindustry.gen.*;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
 
@@ -21,7 +23,7 @@ public class PatchEditor extends BaseDialog{
     private Patch editPatch;
 
     public PatchEditor(){
-        super("");
+        super("@contents-editor");
 
         rootData = NodeData.getRootData();
         card = new NodeCard();
@@ -68,16 +70,22 @@ public class PatchEditor extends BaseDialog{
 
     protected void setup(){
         titleTable.clearChildren();
-        ElementUtils.addTitle(titleTable, "@contents-editor", EPalettes.purpleAccent1);
+        titleTable.background(MinTex.getColoredRegion(EPalettes.purpleAccent1));
+
+        titleTable.table(buttons -> {
+            buttons.defaults().size(150f, 64f).pad(8f).growY();
+
+            buttons.button("@quit", Icon.cancel, Styles.grayt, this::hide);
+            if(Vars.mobile) buttons.button("@node-card.expandLast", Icon.downOpen, Styles.grayt, () -> card.getFrontCard().editLastData());
+        });
+
+        titleTable.add(title).style(Styles.outlineLabel).growX();
 
         cont.top();
 
         card.setNodeData(rootData);
 
-
-        addCloseButton();
-        buttons.button("@node-card.expandLast", () -> card.getFrontCard().editLastData());
-        makeButtonOverlay();
+        addCloseListener();
     }
 
     protected void rebuild(){

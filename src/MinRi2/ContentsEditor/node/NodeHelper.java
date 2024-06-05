@@ -3,6 +3,7 @@ package MinRi2.ContentsEditor.node;
 import arc.struct.*;
 import cf.wayzer.contentsTweaker.*;
 import cf.wayzer.contentsTweaker.CTNode.*;
+import mindustry.ctype.*;
 
 import java.util.*;
 import java.util.Map.*;
@@ -29,6 +30,19 @@ public class NodeHelper{
         }
 
         return null;
+    }
+
+    public static String getDisplayName(CTNode node){
+        ObjInfo<?> objInfo = getObjectInfo(node);
+
+        if(objInfo == null) return "";
+
+        Object obj = objInfo.getObj();
+        if(obj instanceof UnlockableContent content){
+            return content.localizedName;
+        }
+
+        return "";
     }
 
     public static void getEntries(CTNode node, Seq<Entry<String, CTNode>> out){

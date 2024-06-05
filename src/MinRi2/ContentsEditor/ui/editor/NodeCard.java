@@ -11,7 +11,9 @@ import arc.scene.ui.ImageButton.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
+import arc.util.*;
 import cf.wayzer.contentsTweaker.*;
+import mindustry.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.ui.*;
@@ -24,7 +26,7 @@ import java.util.Map.*;
  */
 public class NodeCard extends Table{
     public static float buttonWidth = 320f;
-    public static float buttonHeight = buttonWidth / 4f;
+    public static float buttonHeight = buttonWidth / 3f;
 
     private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
     public boolean isChild, editing;
@@ -35,7 +37,7 @@ public class NodeCard extends Table{
     private NodeData lastChildData;
 
     private String searchText = "";
-    private final DebounceTask debounceRebuild = new DebounceTask(0.3f, this::rebuildNodesTable);
+    private final DebounceTask debounceRebuild = new DebounceTask(0.15f, this::rebuildNodesTable);
 
     public NodeCard(){
         cardCont = new Table();
@@ -170,8 +172,13 @@ public class NodeCard extends Table{
             CTNode childNode = entry.getValue();
             String childNodeName = entry.getKey();
 
-            if(!searchText.isEmpty() && !childNodeName.toLowerCase().contains(searchText.toLowerCase())){
-                continue;
+            if(!searchText.isEmpty()){
+                String displayName = NodeHelper.getDisplayName(childNode);
+
+                if(!Strings.matches(searchText, childNodeName)
+                && (displayName == null || !Strings.matches(searchText, displayName))){
+                    continue;
+                }
             }
 
             if(NodeModifier.modifiable(childNode)){
@@ -222,20 +229,21 @@ public class NodeCard extends Table{
                 horizontalLine.colspan(nameTable.getColumns());
             }).size(buttonWidth, buttonHeight).pad(8f).expandX().left();
 
-            nodeTitle.table(Styles.black3, buttonTable -> {
-                buttonTable.defaults().width(64f).growY();
+            nodeTitle.table(buttonTable -> {
+                buttonTable.defaults().size(64f).pad(8f);
 
                 // Clear data
-                buttonTable.button(Icon.refresh, Styles.clearNonei, () -> {
-                    nodeData.clearJson();
-
-                    getFrontCard().rebuildNodesTable();
+                buttonTable.button(Icon.refresh, Styles.cleari, () -> {
+                    Vars.ui.showConfirm(Core.bundle.format("node-card.clear-data.confirm", nodeData.nodeName), () -> {
+                        nodeData.clearJson();
+                        getFrontCard().rebuildNodesTable();
+                    });
                 }).with(b -> {
                     ElementUtils.addTooltip(b, "@node-card.clear-data", true);
                 });
 
                 if(parent != null){
-                    buttonTable.button(Icon.cancel, Styles.clearNonei, this::extractWorking).with(b -> {
+                    buttonTable.button(Icon.upOpen, Styles.cleari, this::extractWorking).with(b -> {
                         ElementUtils.addTooltip(b, "@node-card.extract", false);
                     });
                 }
