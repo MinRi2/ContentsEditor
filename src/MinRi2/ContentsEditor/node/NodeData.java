@@ -22,7 +22,7 @@ public class NodeData{
 
     protected ObjectMap<String, NodeData> children = new ObjectMap<>();
 
-    /** Null when {@link #node} is Root */
+    /** Null when {@link CTNode} is Root */
     protected @Nullable NodeData parentData;
 
     private NodeData(String nodeName, CTNode node){
@@ -38,6 +38,29 @@ public class NodeData{
         return rootData;
     }
 
+    /**
+     * Function 'addChild' doesn't set the child's previous jsonValue.
+     * see {@link JsonValue}
+     */
+    public static void addChildValue(JsonValue jsonValue, String name, JsonValue childValue){
+        childValue.name = name;
+        childValue.parent = jsonValue;
+
+        JsonValue current = jsonValue.child;
+        if(current == null){
+            jsonValue.child = childValue;
+        }else{
+            while(true){
+                if(current.next == null){
+                    current.next = childValue;
+                    childValue.prev = current;
+                    return;
+                }
+                current = current.next;
+            }
+        }
+    }
+
     public void initJsonData(){
         if(parentData == null || jsonData != null){
             return;
@@ -47,7 +70,7 @@ public class NodeData{
 
         // 都是对象
         JsonValue jsonData = new JsonValue(ValueType.object);
-        parentData.jsonData.addChild(nodeName, jsonData);
+        addChildValue(parentData.jsonData, nodeName, jsonData);
 
         this.jsonData = jsonData;
     }
@@ -94,7 +117,7 @@ public class NodeData{
         // 对象，数组特殊类型需要创建JsonValue
         if(valueType == ValueType.object || valueType == ValueType.array){
             data = new JsonValue(valueType);
-            jsonData.addChild(name, data);
+            addChildValue(jsonData, name, data);
             return data;
         }else{
             return jsonData;
